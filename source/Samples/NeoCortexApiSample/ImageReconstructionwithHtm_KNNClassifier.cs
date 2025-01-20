@@ -128,7 +128,7 @@ namespace NeoCortexApiSample
             var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
             var predictions = classifier.GetPredictedInputValues(testActiveCols, 1);
-
+            Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
             return (sp, classifier);
         }
     }
