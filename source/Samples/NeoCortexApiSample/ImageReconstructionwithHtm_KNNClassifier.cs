@@ -21,7 +21,7 @@ namespace NeoCortexApiSample
         /// Implements an experiment that demonstrates how to learn spatial patterns.
         /// SP will learn every presented Image input in multiple iterations.
         /// </summary>
-        public void Run() //Mausam 17/01
+        public void Run()
 
         {
             Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
@@ -57,6 +57,9 @@ namespace NeoCortexApiSample
                 StimulusThreshold = 10,
             };
 
+            //Runnig the Experiment
+            var sp = RunExperimentWithHTMClassifier(cfg, inputPrefix);
+
         }
 
         /// <summary>
@@ -77,8 +80,6 @@ namespace NeoCortexApiSample
             int imgSize = 32;
             string testName = "test_image";
 
-
-            // Commit 2
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
                 isInStableState = isStable;
@@ -86,10 +87,9 @@ namespace NeoCortexApiSample
             }, requiredSimilarityThreshold: 0.975);
 
             SpatialPooler sp = new SpatialPooler(hpa);
-            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
-        }
+            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) }); //rajan 18-01
 
-         HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
+            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
 
             int[] activeArray = new int[numColumns];
             int maxCycles = 5;
@@ -100,21 +100,46 @@ namespace NeoCortexApiSample
                 foreach (var image in trainingImages)
                 { //Mausam 18-01
                     string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
-                    var activeCols = ArrayUtils.
+                    sp.compute(inputVector, activeArray, true);
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
                     // Train the classifier: associate active columns with the image name
-                    
+                    classifier.Learn(image, activeCols);
 
                     Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
                     Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-                 }
+                }
 
-                    currentCycle++;
+                currentCycle++;
 
                 if (currentCycle >= maxCycles)
                     break;
             }
+
+            // Example prediction after training
+            string testImage = trainingImages[0];
+            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
+            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+
+            int[] intArray = new int[imgSize * imgSize];
+
+            for (int i = 0; i < intArray.Length; i += 32)
+            {
+                // Write 32 values on one line.
+                var line = string.Join(" ", intArray.Skip(i).Take(32));
+                Console.WriteLine(line);
+            }
+
+
+            sp.compute(testInputVector, activeArray, false);//Pradeep 19-01
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+
+            var predictions = classifier.GetPredictedInputValues(testActiveCols, 1);
+            Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
+            return (sp, classifier);
+        }
     }
 }
