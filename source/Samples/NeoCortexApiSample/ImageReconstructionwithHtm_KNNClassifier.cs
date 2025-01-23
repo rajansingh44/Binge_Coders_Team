@@ -121,11 +121,6 @@ namespace NeoCortexApiSample
 
             // Example prediction after training
             string testImage = trainingImages[0];
-            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
-            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
-
-            sp.compute(testInputVector, activeArray, false);//Pradeep 19-01
-            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
             var predictions = classifier.GetPredictedInputValues(testActiveCols, 1);
             Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
