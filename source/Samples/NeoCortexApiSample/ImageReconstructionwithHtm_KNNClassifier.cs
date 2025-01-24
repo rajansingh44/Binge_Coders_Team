@@ -98,7 +98,7 @@ namespace NeoCortexApiSample
                     sp.compute(inputVector, activeArray, true);
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
-                    // Train the classifier: associate active columns with the image name
+                    
                     classifier.Learn(image, activeCols);
 
                     Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
