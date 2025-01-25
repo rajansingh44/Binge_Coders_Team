@@ -97,17 +97,10 @@ namespace NeoCortexApiSample
 
                     sp.compute(inputVector, activeArray, true);
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-
                     // Train the classifier: associate active columns with the image name
                     classifier.Learn(image, activeCols);
 
                     Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
                     Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-                }// Mausam 24-01
-
-                currentCycle++;
-
-                if (currentCycle >= maxCycles)
-                    break;
-            }
+                }

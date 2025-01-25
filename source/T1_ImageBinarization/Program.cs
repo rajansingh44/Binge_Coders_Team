@@ -1,4 +1,4 @@
-﻿
+﻿//sprint 1 changes
 using Newtonsoft.Json.Linq;
 using System;
 using System.Buffers;
@@ -23,7 +23,7 @@ namespace Imagereconstruction
                 // Providing multiple images in a single folder as an input 
                 string InputforBinarizer = Path.Combine(Directory.GetCurrentDirectory(), "Inputs");
 
-            
+                // This program is capable of Multiple Inputs
                 int[] binarizedImage = ImgBinarize.ConvertImagesToBinaryForm(InputforBinarizer);
             }
             catch (Exception ex)
