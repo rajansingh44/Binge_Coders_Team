@@ -54,7 +54,7 @@ namespace NeoCortexApiSample
 
             //Runnig the Experiment
             //var sp = RunExperiment(cfg, inputPrefix);
-            var sp = RunExperimentWithKNNClassifier(cfg, inputPrefix);
+            var sp = RunExperimentWithHTMClassifier(cfg, inputPrefix);
             //Runing the Reconstruction Method Experiment
             //RunRustructuringExperiment(sp);
 
@@ -85,7 +85,7 @@ namespace NeoCortexApiSample
             HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
 
             int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
+            int maxCycles = 15;
             int currentCycle = 0;//Pradeep 24-01
 
             while (!isInStableState && currentCycle < maxCycles)
