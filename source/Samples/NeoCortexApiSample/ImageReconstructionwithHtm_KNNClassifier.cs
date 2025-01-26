@@ -12,7 +12,7 @@ using System.Text;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageBinarizerSpatialPattern
+    internal class ImageReconstructionwithHtm_KNNClassifier
     {
         public string inputPrefix { get; private set; }
 
@@ -60,12 +60,18 @@ namespace NeoCortexApiSample
 
         }
 
+        /// <summary>
+        /// Implements the experiment.
+        /// </summary>
+        /// <param name="cfg"></param>
+        /// <param name="inputPrefix"> The name of the images</param>
 
 
         private (SpatialPooler, HtmClassifier<string, int[]>) RunExperimentWithHTMClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
-            bool isInStableState = false;
+            bool isInStableState = false;  //Mausam
+
 
             int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
@@ -77,31 +83,7 @@ namespace NeoCortexApiSample
             {
                 isInStableState = isStable;
                 Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
-            }, requiredSimilarityThreshold: 0.975);
+            }, requiredSimilarityThreshold: 0.975); // Pradeep 26/01 
 
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
-
-            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
-
-            int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
-            int currentCycle = 0;//Pradeep 24-01
-
-            while (!isInStableState && currentCycle < maxCycles)
-            {
-                foreach (var image in trainingImages)
-                {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
-
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-
-                    
-                    classifier.Learn(image, activeCols);
-
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
-                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-                } 
