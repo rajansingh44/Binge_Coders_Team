@@ -60,11 +60,32 @@ namespace NeoCortexApiSample
 
         }
 
+        /// <summary>
+        /// Implements the experiment.
+        /// </summary>
+        /// <param name="cfg"></param>
+        /// <param name="inputPrefix"> The name of the images</param>
+
+
+
         private (SpatialPooler, HtmClassifier<string, int[]>) RunExperimentWithHTMClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
-            bool isInStableState = false;
+            bool isInStableState = false;  //Mausam
 
-        }
-    }
-}
+
+
+            int numColumns = 64 * 64;
+            string trainingFolder = "Sample\\TestFiles";
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
+            int imgSize = 28;
+            string testName = "test_image";
+
+            HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            {
+                isInStableState = isStable;
+                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
+            }, requiredSimilarityThreshold: 0.975); // Pradeep 26/01 
+
+            SpatialPooler sp = new SpatialPooler(hpa);
+            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
