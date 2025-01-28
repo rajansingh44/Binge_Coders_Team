@@ -12,7 +12,7 @@ using System.Text;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageReconstructionwithHtm_KNNClassifier
+    internal class ImageBinarizerSpatialPattern
     {
         public string inputPrefix { get; private set; }
 
@@ -22,7 +22,7 @@ namespace NeoCortexApiSample
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
@@ -54,11 +54,103 @@ namespace NeoCortexApiSample
 
             //Runnig the Experiment
             //var sp = RunExperiment(cfg, inputPrefix);
-            var sp = RunExperimentWithHTMClassifier(cfg, inputPrefix);
+            var sp = RunExperimentWithKNNClassifier(cfg, inputPrefix);
             //Runing the Reconstruction Method Experiment
             //RunRustructuringExperiment(sp);
 
         }
+
+        /// <summary>
+        /// Implements the experiment.
+        /// </summary>
+        /// <param name="cfg"></param>
+        /// <param name="inputPrefix"> The name of the images</param>
+        /// <returns>The trained bersion of the SP.</returns>
+        //private SpatialPooler RunExperiment(HtmConfig cfg, string inputPrefix)
+        //{
+
+        //    var mem = new Connections(cfg);
+
+        //    bool isInStableState = false;
+
+        //    int numColumns = 64 * 64;
+        //    //Accessing the Image Folder form the Cureent Directory
+        //    string trainingFolder = "Sample\\TestFiles";
+        //    //Accessing the Image Folder form the Cureent Directory Foldfer
+        //    var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
+        //    //Image Size
+        //    int imageSize = 28;
+        //    //Folder Name in the Directorty 
+        //    string testName = "test_image";
+
+        //    HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+        //    {
+        //        // Event should only be fired when entering the stable state.
+        //        if (isStable)
+        //        {
+        //            isInStableState = true;
+        //            Debug.WriteLine($"Entered STABLE state: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+        //        }
+        //        else
+        //        {
+        //            isInStableState = false;
+        //            Debug.WriteLine($"INSTABLE STATE");
+        //        }
+        //        // Ideal SP should never enter unstable state after stable state.
+        //        Debug.WriteLine($"Entered STABLE state: Patterns: {numPatterns}, Inputs: {seenInputs}, iteration: {seenInputs / numPatterns}");
+        //    }, requiredSimilarityThreshold: 0.975);
+
+        //    // It creates the instance of Spatial Pooler Multithreaded version.
+        //    SpatialPooler sp = new SpatialPooler(hpa);
+
+        //    //Initializing the Spatial Pooler Algorithm
+        //    sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
+
+        //    //Image Size
+        //    int imgSize = 28;
+        //    int[] activeArray = new int[numColumns];
+
+        //    int numStableCycles = 0;
+        //    // Runnig the Traning Cycle for 5 times
+        //    int maxCycles = 5;
+        //    int currentCycle = 0;
+
+        //    while (!isInStableState && currentCycle < maxCycles)
+        //    {
+        //        foreach (var Image in trainingImages)
+        //        {
+        //            //Binarizing the Images before taking Inputs for the Sp
+        //            string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{Image}", imgSize, testName);
+
+        //            // Read Binarized and Encoded input csv file into array
+        //            int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+
+        //            int[] oldArray = new int[activeArray.Length];
+        //            List<double[,]> overlapArrays = new List<double[,]>();
+        //            List<double[,]> bostArrays = new List<double[,]>();
+
+        //            sp.compute(inputVector, activeArray, true);
+        //            //Getting the Active Columns
+        //            var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+
+        //            Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {Image}'");
+        //            Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
+        //            Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+        //        }
+
+        //        currentCycle++;
+
+        //        // Check if the desired number of cycles is reached
+        //        if (currentCycle >= maxCycles)
+        //            break;
+
+        //        // Increment numStableCycles only when it's in a stable state
+        //        if (isInStableState)
+        //            numStableCycles++;
+        //    }
+
+        //    return sp;
+        //}
 
         private (SpatialPooler, HtmClassifier<string, int[]>) RunExperimentWithHTMClassifier(HtmConfig cfg, string inputPrefix)
         {
@@ -81,39 +173,41 @@ namespace NeoCortexApiSample
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) }); //Rajan
 
-            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
 
-            int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
-            int currentCycle = 0;
 
-            while (!isInStableState && currentCycle < maxCycles)
+            HtmClassifier<string, int[]> htmClassifier = new HtmClassifier<string, int[]>();
+
+            int[] activeColumns = new int[numColumns];
+            int maxIterations = 15;
+            int currentIteration = 0;
+            bool isStable = false;
+
+            while (!isStable && currentIteration < maxIterations)
             {
-                foreach (var image in trainingImages)
+                foreach (var imagePath in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                    string binaryImageFile = NeoCortexUtils.BinarizeImage(imagePath, imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binaryImageFile).ToArray();
 
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);//Rajan
+                    sp.compute(inputVector, activeColumns, learn: true);
+                    var activeIndices = ArrayUtils.IndexWhere(activeColumns, (element) => element == 1);
 
-                    // Train the classifier: associate active columns with the image name
-                    classifier.Learn(image, activeCols);
+                    // TODO: Add stability check logic for `isStable`
 
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+
+                    Debug.WriteLine($"'Cycle: {currentIteration} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeIndices)}\n");
+
                 }
 
-                currentCycle++;
+                currentIteration++;
 
-                if (currentCycle >= maxCycles)
+                if (currentIteration >= maxIterations)
                     break;
-            }//Pradep
+            }
+
+
         }
     }
 }
-
-
-
-  
