@@ -173,40 +173,51 @@ namespace NeoCortexApiSample
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) }); //Rajan
 
-            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
 
-            int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
-            int currentCycle = 0;
 
-            while (!isInStableState && currentCycle < maxCycles)
+            HtmClassifier<string, int[]> htmClassifier = new HtmClassifier<string, int[]>();
+
+            int[] activeColumns = new int[numColumns];
+            int maxIterations = 15;
+            int currentIteration = 0;
+            bool isStable = false;
+
+            while (!isStable && currentIteration < maxIterations)
             {
-                foreach (var image in trainingImages)
+                foreach (var imagePath in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                    string binaryImageFile = NeoCortexUtils.BinarizeImage(imagePath, imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binaryImageFile).ToArray();
 
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);//Rajan
+                    sp.compute(inputVector, activeColumns, learn: true);
+                    var activeIndices = ArrayUtils.IndexWhere(activeColumns, (element) => element == 1);
 
-                    // Train the classifier: associate active columns with the image name
-                    classifier.Learn(image, activeCols);
+                    // TODO: Add stability check logic for `isStable`
 
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+
+                    Debug.WriteLine($"'Cycle: {currentIteration} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeIndices)}\n");
+
                 }
 
-                currentCycle++;
+                currentIteration++;
 
-                if (currentCycle >= maxCycles)
+                if (currentIteration >= maxIterations)
                     break;
-            }//Pradep
+            }
 
             // Example prediction after training
             string testImage = trainingImages[0];
             string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
             int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+
+            sp.compute(testInputVector, activeArray, false);
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);//Mausam
+        }
+    }
+}
+
 
 
 
