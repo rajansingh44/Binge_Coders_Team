@@ -175,18 +175,25 @@ namespace NeoCortexApiSample
 
 
 
-            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
+            HtmClassifier<string, int[]> htmClassifier = new HtmClassifier<string, int[]>();
 
-            int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
-            int currentCycle = 0;
+            int[] activeColumns = new int[numColumns];
+            int maxIterations = 5;
+            int currentIteration = 0;
+            bool isStable = false;
 
-            while (!isInStableState && currentCycle < maxCycles)
+            while (!isStable && currentIteration < maxIterations)
             {
-                foreach (var image in trainingImages)
+                foreach (var imagePath in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                    string binaryImageFile = NeoCortexUtils.BinarizeImage(imagePath, imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binaryImageFile).ToArray();
 
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+                    sp.compute(inputVector, activeColumns, learn: true);
+                    var activeIndices = ArrayUtils.IndexWhere(activeColumns, (element) => element == 1);
+
+                    // TODO: Add stability check logic for `isStable`
+                }
+
+                currentIteration++;
+            }
