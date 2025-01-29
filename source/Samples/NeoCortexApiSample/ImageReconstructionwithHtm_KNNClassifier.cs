@@ -1,4 +1,7 @@
-﻿using NeoCortex;
+﻿//New code added on 23rd January
+
+
+using NeoCortex;
 using NeoCortexApi.Entities;
 using NeoCortexApi.Utility;
 using NeoCortexApi;
@@ -12,7 +15,7 @@ using System.Text;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageBinarizerSpatialPattern
+    internal class ImageReconstructionwithHtm_KNNClassifier
     {
         public string inputPrefix { get; private set; }
 
@@ -22,7 +25,7 @@ namespace NeoCortexApiSample
         /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
@@ -155,8 +158,7 @@ namespace NeoCortexApiSample
         private (SpatialPooler, HtmClassifier<string, int[]>) RunExperimentWithHTMClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
-            bool isInStableState = false;  //Mausam
-
+            bool isInStableState = false;
 
             int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
@@ -168,46 +170,70 @@ namespace NeoCortexApiSample
             {
                 isInStableState = isStable;
                 Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
-            }, requiredSimilarityThreshold: 0.975); // Pradeep 26/01 
+            }, requiredSimilarityThreshold: 0.975);
 
             SpatialPooler sp = new SpatialPooler(hpa);
-            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) }); //Rajan
+            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
 
+            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
 
+            int[] activeArray = new int[numColumns];
+            int maxCycles = 5;
+            int currentCycle = 0;
 
-            HtmClassifier<string, int[]> htmClassifier = new HtmClassifier<string, int[]>();
-
-            int[] activeColumns = new int[numColumns];
-            int maxIterations = 15;
-            int currentIteration = 0;
-            bool isStable = false;
-
-            while (!isStable && currentIteration < maxIterations)
+            while (!isInStableState && currentCycle < maxCycles)
             {
-                foreach (var imagePath in trainingImages)
+                foreach (var image in trainingImages)
                 {
-                    string binaryImageFile = NeoCortexUtils.BinarizeImage(imagePath, imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binaryImageFile).ToArray();
+                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
-                    sp.compute(inputVector, activeColumns, learn: true);
-                    var activeIndices = ArrayUtils.IndexWhere(activeColumns, (element) => element == 1);
+                    sp.compute(inputVector, activeArray, true);
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
-                    // TODO: Add stability check logic for `isStable`
+                    // Train the classifier: associate active columns with the image name
+                    classifier.Learn(image, activeCols);
 
-
-                    Debug.WriteLine($"'Cycle: {currentIteration} - Image-Input: {image}'");
+                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeIndices)}\n");
-
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
                 }
 
-                currentIteration++;
+                currentCycle++;
 
-                if (currentIteration >= maxIterations)
+                if (currentCycle >= maxCycles)
                     break;
             }
 
+            // Example prediction after training
+            string testImage = trainingImages[0];
+            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
+            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
 
+            sp.compute(testInputVector, activeArray, false);
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+
+            var predictions = classifier.GetPredictedInputValues(testActiveCols, 1);
+            Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
+
+            return (sp, classifier);
+        }
+
+
+
+        private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
+        {
+            var mem = new Connections(cfg);
+            bool isInStableState = false;
+
+            int numColumns = 64 * 64;
+            string trainingFolder = "Sample\\TestFiles";
+            string outputFolder = "Output"; // Output folder
+            Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
+
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
+            int imgSize = 28;
+            string testName = "test_image"; //Pradeep 29-01
         }
     }
 }
