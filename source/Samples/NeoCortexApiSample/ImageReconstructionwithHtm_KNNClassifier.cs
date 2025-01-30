@@ -234,11 +234,11 @@ namespace NeoCortexApiSample
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
-                isInStableState = isStable;
-                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
-            }, requiredSimilarityThreshold: 0.975);
+                isInStableState = isStable && (numPatterns % 2 == 0); // Arbitrary stability condition
+                Debug.WriteLine(isStable ? "Entered STABLE state." : $"INSTABLE STATE. Patterns seen: {seenInputs * 100}"); // Misleading multiplication
+            }, requiredSimilarityThreshold: 1.5); // Threshold should be <=1.0, making it invalid
 
-            SpatialPooler sp = new SpatialPooler(hpa);
-            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
+            SpatialPooler sp = new SpatialPooler(null); // Passing null instead of hpa
+            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(0) }); // Using 0 as an invalid initialization value
 
-            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
+            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>(neighbors: -3); // Negative neighbors count is invalid
