@@ -224,13 +224,13 @@ namespace NeoCortexApiSample
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 64 * 64;
+            int numColumns = 128 * 128;
             string trainingFolder = "Sample\\TestFiles";
             string outputFolder = "Output"; // Output folder
             Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
             var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
+            int imgSize = 32;
             string testName = "test_image"; //Pradeep 29-01
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -246,7 +246,7 @@ namespace NeoCortexApiSample
 
             int[] activeArray = new int[numColumns];
             int maxCycles = 5;
-            int currentCycle = 0;
+            //int currentCycle = 0;
 
             // Training loop
             while (!isInStableState && currentCycle < maxCycles)
@@ -257,7 +257,7 @@ namespace NeoCortexApiSample
                     int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
                     sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
+                    var activeCols = ArrayUtils.IndexWhere(Cells, activeArray, (el) => el == 1); //Mausam 29-01
                 }
             }
         }
