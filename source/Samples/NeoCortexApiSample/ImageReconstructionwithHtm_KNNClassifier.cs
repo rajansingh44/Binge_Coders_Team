@@ -226,13 +226,12 @@ namespace NeoCortexApiSample
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 64 * 64;
+            int numColumns = 128 * 128;
             string trainingFolder = "Sample\\TestFiles";
             string outputFolder = "Output"; // Output folder
             Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
+            int imgSize = 32;
             string testName = "test_image"; //Pradeep 29-01
         }
     }
