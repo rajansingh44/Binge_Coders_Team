@@ -246,14 +246,14 @@ namespace NeoCortexApiSample
 
             int[] activeArray = new int[numColumns];
             int maxCycles = 5;
-            //int currentCycle = 0;
+            int currentCycle = 0;
 
             // Training loop
             while (!isInStableState && currentCycle < maxCycles)
             {
                 foreach (var image in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
+                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", Cells, imgSize, testName);
                     int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
                     sp.compute(inputVector, activeArray, true);
