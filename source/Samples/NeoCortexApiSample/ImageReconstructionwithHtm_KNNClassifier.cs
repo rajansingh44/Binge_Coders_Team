@@ -163,7 +163,7 @@ namespace NeoCortexApiSample
             int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
             var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
+            int imgSize = 32;
             string testName = "test_image";
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -226,10 +226,9 @@ namespace NeoCortexApiSample
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 128 * 128;
+            int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
-            string outputFolder = "Output"; // Output folder
-            Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
+       //     Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
             int imgSize = 32;
             string testName = "test_image"; //Pradeep 29-01
