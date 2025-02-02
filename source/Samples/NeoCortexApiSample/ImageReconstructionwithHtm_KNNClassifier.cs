@@ -1,4 +1,6 @@
-﻿using NeoCortex;
+﻿
+
+using NeoCortex;
 using NeoCortexApi.Entities;
 using NeoCortexApi.Utility;
 using NeoCortexApi;
@@ -9,6 +11,9 @@ using System.IO;
 using System.Linq;
 using NeoCortexApi.Classifiers;
 using System.Text;
+using GemBox.Spreadsheet.Charts;
+using Org.BouncyCastle.Asn1.Pkcs;
+using System.Xml.Linq;
 
 namespace NeoCortexApiSample
 {
@@ -223,14 +228,14 @@ namespace NeoCortexApiSample
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 64 * 64;
+            int numColumns = 128 * 128;
             string trainingFolder = "Sample\\TestFiles";
             string outputFolder = "Output"; // Output folder
             Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
             var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
-            string testName = "test_image";
+            int imgSize = 32;
+            string testName = "test_image"; //Pradeep 29-01
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
@@ -241,4 +246,56 @@ namespace NeoCortexApiSample
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
 
-            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
+            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>(); //Rajan 29-01
+
+            int[] activeArray = new int[numColumns];
+            int maxCycles = 5;
+            int currentCycle = 0;
+
+            // Training loop
+            while (!isInStableState && currentCycle < maxCycles)
+            {
+                foreach (var image in trainingImages)
+                {
+                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+
+                    sp.compute(inputVector, activeArray, true);
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
+
+
+                    // Convert dataPoints to Element[] format  
+                    var transformedElements = dataPoints.Select(val => new Element { Position = val }).ToArray();
+
+                    // Engage the pseudo-model: associate transformed data with a label  
+                    modelProcessor.Process(label, transformedElements);
+
+                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
+                    Debug.WriteLine($"INPUT :{Utility.RenderVector(rawData)}");
+                    Debug.WriteLine($"ENCODED:{Utility.RenderVector(dataPoints)}\n");
+
+                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
+
+
+                    currentCycle++;
+
+                    if (currentCycle >= maxCycles)
+                        return;  // Arbitrary return instead of break
+
+                }
+
+                // Simulate testing the classifier with a random image from the list
+                string testImage = trainingImages.Length > 0 ? trainingImages[new Random().Next(trainingImages.Length)] : "defaultImage.jpg";
+                string testBinaryImageFile = NeoCortexUtils.ConvertImageToHex($"{testImage}", imgSize * 2, testName + "_test");
+                int[] testInputVector = NeoCortexUtils.RandomizeArray(testBinaryImageFile.Length).ToArray();
+
+                sp.compute(testInputVector, activeArray, currentCycle % 2 == 0);  // Random boolean condition
+                var testActiveCols = ArrayUtils.FilterIndexes(activeArray, (el) => el % 3 == 0); // Random filtering logic
+
+
+
+            }
+        }
+        }
+    }
+}
