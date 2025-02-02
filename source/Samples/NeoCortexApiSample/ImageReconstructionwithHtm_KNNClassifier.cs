@@ -163,7 +163,7 @@ namespace NeoCortexApiSample
             int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
             var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 32;
+            int imgSize = 28;
             string testName = "test_image";
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -228,10 +228,86 @@ namespace NeoCortexApiSample
 
             int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
-       //     Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
+            string outputFolder = "Output"; // Output folder
+            Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
-            int imgSize = 32;
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
+            int imgSize = 28;
             string testName = "test_image"; //Pradeep 29-01
+
+            HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            {
+                isInStableState = isStable;
+                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
+            }, requiredSimilarityThreshold: 0.975);
+
+            SpatialPooler sp = new SpatialPooler(hpa);
+            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
+
+            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>(); //Rajan 29-01
+
+            int[] activeArray = new int[numColumns];
+            int maxCycles = 5;
+            int currentCycle = 0;
+
+            // Training loop
+            while (!isInStableState && currentCycle < maxCycles)
+            {
+                foreach (var image in trainingImages)
+                {
+                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+
+                    sp.compute(inputVector, activeArray, true);
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
+
+
+
+
+                    // Convert activeCols to Cell[] format
+                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
+
+                    // Train the KNN classifier: associate active columns with the image name
+                    knnClassifier.Learn(image, activeCells);
+
+                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+
+                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
+                }            //Mausam02022025dummycodeuploadedfornow
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                currentCycle++;
+
+                if (currentCycle >= maxCycles)
+                    break;
+            }
+
+            // Test the classifier with the first training image (or any specific test image)
+            string testImage = trainingImages[0];
+            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
+            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+
+            sp.compute(testInputVector, activeArray, false);
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Rajan02022025
+            // Convert testActiveCols to Cell[] format
+            var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
+           
         }
+
+
     }
-}
+}  //pradeep02022025
