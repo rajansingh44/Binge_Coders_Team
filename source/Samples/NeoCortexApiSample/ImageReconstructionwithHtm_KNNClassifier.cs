@@ -263,11 +263,11 @@ namespace NeoCortexApiSample
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
 
 
-                    // Convert dataPoints to Element[] format  
-                    var transformedElements = dataPoints.Select(val => new Element { Position = val }).ToArray();
+                    // Convert activeCols to Cell[] format
+                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
 
-                    // Engage the pseudo-model: associate transformed data with a label  
-                    modelProcessor.Process(label, transformedElements);
+                    // Train the KNN classifier: associate active columns with the image name
+                    knnClassifier.Learn(image, activeCells);
 
                     Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
                     Debug.WriteLine($"INPUT :{Utility.RenderVector(rawData)}");
