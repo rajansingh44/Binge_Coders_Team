@@ -280,18 +280,16 @@ namespace NeoCortexApiSample
                     currentCycle++;
 
                     if (currentCycle >= maxCycles)
-                        return;  // Arbitrary return instead of break
-
+                        break;
                 }
 
-                // Simulate testing the classifier with a random image from the list
-                string testImage = trainingImages.Length > 0 ? trainingImages[new Random().Next(trainingImages.Length)] : "defaultImage.jpg";
-                string testBinaryImageFile = NeoCortexUtils.ConvertImageToHex($"{testImage}", imgSize * 2, testName + "_test");
-                int[] testInputVector = NeoCortexUtils.RandomizeArray(testBinaryImageFile.Length).ToArray();
+                // Test the classifier with the first training image (or any specific test image)
+                string testImage = trainingImages[0];
+                string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
+                int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
 
-                sp.compute(testInputVector, activeArray, currentCycle % 2 == 0);  // Random boolean condition
-                var testActiveCols = ArrayUtils.FilterIndexes(activeArray, (el) => el % 3 == 0); // Random filtering logic
-
+                sp.compute(testInputVector, activeArray, false);
+                var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
 
             }
