@@ -10,6 +10,9 @@ using System.IO;
 using System.Linq;
 using NeoCortexApi.Classifiers;
 using System.Text;
+using GemBox.Spreadsheet.Charts;
+using Org.BouncyCastle.Asn1.Pkcs;
+using System.Xml.Linq;
 
 namespace NeoCortexApiSample
 {
@@ -253,11 +256,27 @@ namespace NeoCortexApiSample
             {
                 foreach (var image in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", Cells, imgSize, testName);
+                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
                     int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
                     sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(Cells, activeArray, (el) => el == 1); //Mausam 29-01
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
+
+
+                    // Convert dataPoints to Element[] format  
+                    var transformedElements = dataPoints.Select(val => new Element { Position = val }).ToArray();
+
+                    // Engage the pseudo-model: associate transformed data with a label  
+                    modelProcessor.Process(label, transformedElements);
+
+                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
+                    Debug.WriteLine($"INPUT :{Utility.RenderVector(rawData)}");
+                    Debug.WriteLine($"ENCODED:{Utility.RenderVector(dataPoints)}\n");
+
+                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
+
+
+
                 }
             }
         }
