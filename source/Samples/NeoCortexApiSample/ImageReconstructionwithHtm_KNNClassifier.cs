@@ -288,8 +288,7 @@ namespace NeoCortexApiSample
                 string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
                 int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
 
-                sp.compute(testInputVector, activeArray, false);
-                var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+
 
 
             }
