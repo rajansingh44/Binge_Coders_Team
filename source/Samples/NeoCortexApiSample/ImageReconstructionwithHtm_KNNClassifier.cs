@@ -307,7 +307,14 @@ namespace NeoCortexApiSample
             var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
 
             // Get predictions from the KNN classifier
-            var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7); // Top 3 predictions
+            var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7); // Top 7 predictions
+
+            // Display predictions
+            foreach (var prediction in predictions)
+            {
+                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Accuracy: {prediction.Similarity}");
+            }
+
 
         }
 
