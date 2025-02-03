@@ -269,8 +269,8 @@ namespace NeoCortexApiSample
                     // Train the KNN classifier: associate active columns with the image name
                     knnClassifier.Learn(image, activeCells);
 
-                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
-                    Debug.WriteLine($"INPUT :{Utility.RenderVector(rawData)}");
+                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}")
                     Debug.WriteLine($"ENCODED:{Utility.RenderVector(dataPoints)}\n");
 
                     Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
