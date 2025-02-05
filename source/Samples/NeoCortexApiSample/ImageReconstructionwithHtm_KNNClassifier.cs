@@ -1,4 +1,5 @@
-﻿
+﻿//New code added on 23rd January
+
 
 using NeoCortex;
 using NeoCortexApi.Entities;
@@ -11,9 +12,6 @@ using System.IO;
 using System.Linq;
 using NeoCortexApi.Classifiers;
 using System.Text;
-using GemBox.Spreadsheet.Charts;
-using Org.BouncyCastle.Asn1.Pkcs;
-using System.Xml.Linq;
 
 namespace NeoCortexApiSample
 {
@@ -228,13 +226,13 @@ namespace NeoCortexApiSample
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 128 * 128;
+            int numColumns = 64 * 64;
             string trainingFolder = "Sample\\TestFiles";
             string outputFolder = "Output"; // Output folder
             Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
             var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 32;
+            int imgSize = 28;
             string testName = "test_image"; //Pradeep 29-01
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -264,35 +262,70 @@ namespace NeoCortexApiSample
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
 
 
-                    // Convert dataPoints to Element[] format  
-                    var transformedElements = dataPoints.Select(val => new Element { Position = val }).ToArray();
-
-                    // Engage the pseudo-model: associate transformed data with a label  
-                    modelProcessor.Process(label, transformedElements);
-
-                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
-                    Debug.WriteLine($"INPUT :{Utility.RenderVector(rawData)}");
-                    Debug.WriteLine($"ENCODED:{Utility.RenderVector(dataPoints)}\n");
-
-                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
 
 
-                    currentCycle++;
+                    // Convert activeCols to Cell[] format
+                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
 
-                    if (currentCycle >= maxCycles)
-                        break;
-                }
+                    // Train the KNN classifier: associate active columns with the image name
+                    knnClassifier.Learn(image, activeCells);
 
-                // Test the classifier with the first training image (or any specific test image)
-                string testImage = trainingImages[0];
-                string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
-                int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+
+                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
+                }            
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+                currentCycle++;
+
+                if (currentCycle >= maxCycles)
+                    break;
             }
+
+            // Test the classifier with the first training image (or any specific test image)
+            string testImage = trainingImages[0];
+            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
+            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+
+            sp.compute(testInputVector, activeArray, false);
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); 
+
+
+
+
+
+
+
+
+            // Convert testActiveCols to Cell[] format
+            var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
+
+            // Get predictions from the KNN classifier
+            var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7); // Top 3 predictions
+
+            // Display predictions
+            foreach (var prediction in predictions)
+            {
+                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Accuracy: {prediction.Similarity}");
+            }
+
+            return (sp, knnClassifier);
         }
-        }
+
+
     }
 }
