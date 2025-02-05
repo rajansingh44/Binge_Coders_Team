@@ -271,13 +271,12 @@ namespace NeoCortexApiSample
 
                     Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}")
-                    Debug.WriteLine($"ENCODED:{Utility.RenderVector(dataPoints)}\n");
+                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
+                
 
-                    Debug.WriteLine($"Step: {iterationCount} - Data-Label: {label}");
 
-
-
-                }
+            }
             }
         }
     }
