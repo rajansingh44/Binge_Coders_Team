@@ -277,19 +277,6 @@ namespace NeoCortexApiSample
                     Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
                 }            //Mausam02022025dummycodeuploadedfornow
 
-
-
-
-
-
-
-
-
-
-
-
-
-
                 currentCycle++;
 
                 if (currentCycle >= maxCycles)
@@ -310,13 +297,6 @@ namespace NeoCortexApiSample
             // Get predictions from the KNN classifier
             var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7); // Top 3 predictions
 
-            // Display predictions
-            foreach (var prediction in predictions)
-            {
-                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Accuracy: {prediction.Similarity}");
-            }
-
-            return (sp, knnClassifier);
         }
 
 
