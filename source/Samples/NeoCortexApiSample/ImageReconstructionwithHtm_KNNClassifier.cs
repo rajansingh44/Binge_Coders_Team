@@ -259,8 +259,12 @@ namespace NeoCortexApiSample
                     string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
                     int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
 
+                    Debug.WriteLine($"Binarized Input for {image}: {Helpers.StringifyVector(inputVector)}"); //Printing the binarised input vector
+
                     sp.compute(inputVector, activeArray, true);
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Mausam 29-01
+
+                    Debug.WriteLine($"SDR for {image} in cycle {currentCycle}: {Helpers.StringifyVector(activeCols)}"); //Printing the SDR
 
 
                     // Convert activeCols to Cell[] format
@@ -270,8 +274,8 @@ namespace NeoCortexApiSample
                     knnClassifier.Learn(image, activeCells);
 
                     Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
-                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}")
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
+                    //Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
                     Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
                 
 
