@@ -266,6 +266,14 @@ namespace NeoCortexApiSample
 
                     Debug.WriteLine($"SDR for {image} in cycle {currentCycle}: {Helpers.StringifyVector(activeCols)}"); //Printing the SDR
 
+                    if (!imageSDRs.ContainsKey(image))
+                    {
+                        imageSDRs[image] = new List<int[]>();
+                    }
+                    imageSDRs[image].Add(activeCols.ToArray());
+
+                    currentCycle++;
+
 
                     // Convert activeCols to Cell[] format
                     var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
@@ -277,10 +285,11 @@ namespace NeoCortexApiSample
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
                     //Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
                     Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
+                }
                 
 
 
-            }
+             
             }
         }
     }
