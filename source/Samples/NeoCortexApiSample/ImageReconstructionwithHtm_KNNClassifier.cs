@@ -301,7 +301,13 @@ namespace NeoCortexApiSample
             string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
             int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
 
-            sp.compute(testInputVector, activeArray, false);          
+            sp.compute(testInputVector, activeArray, false);
+            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1); //Rajan02022025
+
+
+            // Convert testActiveCols to Cell[] format
+            var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
+
             // Get predictions from the KNN classifier
             var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7); // Top 3 predictions
 
