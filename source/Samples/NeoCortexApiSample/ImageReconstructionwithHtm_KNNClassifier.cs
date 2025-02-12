@@ -274,9 +274,18 @@ namespace NeoCortexApiSample
 
                     currentCycle++;
 
+                    foreach (var image in imageSDRs)
+                    {
+                        var sdrs = image.Value;
+                        if (sdrs.Count < 2)
+                        {
+                            Debug.WriteLine($"Image: {image.Key} has less than 2 SDRs. Skipping similarity calculation.");
+                            continue;
+                        }
 
-                    // Convert activeCols to Cell[] format
-                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
+
+                        // Convert activeCols to Cell[] format
+                        var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
 
                     // Train the KNN classifier: associate active columns with the image name
                     knnClassifier.Learn(image, activeCells);
