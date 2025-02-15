@@ -315,7 +315,10 @@ namespace NeoCortexApiSample
                 // Use the predicted SDR in the reconstruction process
                 Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
 
-               
+                int maxInput = predictedSDR.Length;
+
+                List<List<double>> heatmapData = new List<List<double>>();
+
             }
         }
     }
