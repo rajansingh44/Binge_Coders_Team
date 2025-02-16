@@ -308,3 +308,12 @@ namespace NeoCortexApiSample
 
             // Show distances calculated between test and stored SDRs
             Debug.WriteLine("\n--- DISTANCE CALCULATIONS ---");
+            foreach (var prediction in predictions)
+            {
+                Debug.WriteLine($"Compared Label: {prediction.PredictedInput}, Distance: {prediction.NumOfSameBits}");
+            }
+
+
+        }
+    }
+}
