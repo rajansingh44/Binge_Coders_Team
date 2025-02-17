@@ -343,8 +343,7 @@ namespace NeoCortexApiSample
                 {
                     for (int row = 0; row < 32; row++)
                     {
-                        string line = string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32));
-                        writer.WriteLine(line);
+
                     }
                 }
 
