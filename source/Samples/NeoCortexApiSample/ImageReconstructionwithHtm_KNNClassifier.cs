@@ -318,7 +318,10 @@ namespace NeoCortexApiSample
                 int maxInput = predictedSDR.Length;
 
                 List<List<double>> heatmapData = new List<List<double>>();
-
+                // Initialize a list to get normalized permanence values.
+                List<int[]> BinarizedencodedInputs = new List<int[]>();
+                // List to store normalized permanence values
+                List<int[]> normalizedPermanence = new List<int[]>();
             }
         }
     }
