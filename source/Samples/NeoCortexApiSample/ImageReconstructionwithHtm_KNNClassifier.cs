@@ -312,7 +312,8 @@ namespace NeoCortexApiSample
             {
                 Debug.WriteLine($"Compared Label: {prediction.PredictedInput}, Distance: {prediction.NumOfSameBits}");
             }
-
+            // Display similarity scores & final predictions
+            Debug.WriteLine("\n--- FINAL PREDICTIONS ---");
 
         }
     }
