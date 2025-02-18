@@ -315,6 +315,11 @@ namespace NeoCortexApiSample
             // Display similarity scores & final predictions
             Debug.WriteLine("\n--- FINAL PREDICTIONS ---");
 
+            foreach (var prediction in predictions)
+            {
+                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Similarity: {prediction.Similarity}");
+            }
+
         }
     }
 }
