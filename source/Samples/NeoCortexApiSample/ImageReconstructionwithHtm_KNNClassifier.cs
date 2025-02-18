@@ -322,6 +322,12 @@ namespace NeoCortexApiSample
                 List<int[]> BinarizedencodedInputs = new List<int[]>();
                 // List to store normalized permanence values
                 List<int[]> normalizedPermanence = new List<int[]>();
+                // List to store similarity values
+                List<double[]> similarityList = new List<double[]>();
+
+                // Create a new dictionary to store extended probabilities
+                Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
+
             }
         }
     }
