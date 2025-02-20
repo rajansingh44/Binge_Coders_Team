@@ -348,16 +348,7 @@ private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string o
                     using (StreamWriter writer = new StreamWriter(filePath))
                     {
                         // Ensure the permanence array isn't null or empty
-                        if (normalizedPermanence[i] == null || normalizedPermanence[i].Length == 0)
-                        {
-                            Debug.WriteLine($"Warning: Skipped writing empty data for index {i}");
-                            continue;
-                        }
 
-                        for (int row = 0; row < normalizedPermanence[i].Length; row++)
-                        {
-                            writer.WriteLine(normalizedPermanence[i][row]);
-                        }
                     }
 
                     Debug.WriteLine($"Successfully saved: {filePath}");
