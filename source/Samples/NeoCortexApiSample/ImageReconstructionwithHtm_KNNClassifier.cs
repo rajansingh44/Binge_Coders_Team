@@ -319,6 +319,9 @@ namespace NeoCortexApiSample
             {
                 Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Similarity: {prediction.Similarity}");
             }
+            // Optional: Limit to top predictions
+            var sortedPredictions = predictions.OrderByDescending(p => p.Similarity).Take(3); // Top 3 predictions
+            Debug.WriteLine("\nTop Predictions:");
 
         }
     }
