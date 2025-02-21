@@ -337,18 +337,27 @@ private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string o
             }
 
             // Loop through each permanence array and save it
+            // Ensure the list is not null or empty before proceeding
+            if (normalizedPermanence == null || normalizedPermanence.Count == 0)
+            {
+                Debug.WriteLine("No data available in normalizedPermanence. Skipping file creation.");
+                return;
+            }
+
+            // Generate a consistent timestamp for all files in this batch
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+
             for (int i = 0; i < normalizedPermanence.Count; i++)
             {
-                // Generate a unique filename using timestamp and index
-                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Adds millisecond precision
+                // Construct a unique filename
                 string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
 
                 try
                 {
                     using (StreamWriter writer = new StreamWriter(filePath))
                     {
-                        // Ensure the permanence array isn't null or empty
-
+                        // Placeholder: Write data to file if necessary
+                        writer.WriteLine($"Data for entry {i}");
                     }
 
                     Debug.WriteLine($"Successfully saved: {filePath}");
@@ -358,4 +367,3 @@ private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string o
                     Debug.WriteLine($"Error saving file {filePath}: {ex.Message}");
                 }
             }
-        }
