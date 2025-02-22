@@ -322,6 +322,11 @@ namespace NeoCortexApiSample
             // Optional: Limit to top predictions
             var sortedPredictions = predictions.OrderByDescending(p => p.Similarity).Take(3); // Top 3 predictions
             Debug.WriteLine("\nTop Predictions:");
+            foreach (var prediction in sortedPredictions)
+            {
+                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Similarity: {prediction.Similarity}");
+
+            }
 
         }
     }
