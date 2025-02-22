@@ -333,6 +333,10 @@ namespace NeoCortexApiSample
                     int inputIndex = kvp.Key;
                     double probability = kvp.Value;
 
+                    // Use the existing probability
+                    allPermanenceDictionary[inputIndex] = probability;
+
+
                 }
 
             }
