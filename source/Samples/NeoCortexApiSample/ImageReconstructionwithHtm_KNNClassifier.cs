@@ -327,43 +327,27 @@ namespace NeoCortexApiSample
         }
         }
 
-private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
         {
             // Ensure the output directory exists
-            if (!Directory.Exists(outputFolder))
-            {
-                Directory.CreateDirectory(outputFolder);
-                Debug.WriteLine($"Created directory: {outputFolder}");
-            }
+            Directory.CreateDirectory(outputFolder);
 
             // Loop through each permanence array and save it
-            // Ensure the list is not null or empty before proceeding
-            if (normalizedPermanence == null || normalizedPermanence.Count == 0)
-            {
-                Debug.WriteLine("No data available in normalizedPermanence. Skipping file creation.");
-                return;
-            }
-
-            // Generate a consistent timestamp for all files in this batch
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-
             for (int i = 0; i < normalizedPermanence.Count; i++)
             {
-                // Construct a unique filename
+                // Generate a unique filename using timestamp and index
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Adds millisecond precision
                 string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
 
-                try
+                using (StreamWriter writer = new StreamWriter(filePath))
                 {
-                    using (StreamWriter writer = new StreamWriter(filePath))
+                    for (int row = 0; row < 32; row++)
                     {
-                        // Placeholder: Write data to file if necessary
-                        writer.WriteLine($"Data for entry {i}");
+                        string line = string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32));
+                        writer.WriteLine(line);
                     }
+                }
 
-                    Debug.WriteLine($"Successfully saved: {filePath}");
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine($"Error saving file {filePath}: {ex.Message}");
-                }
+                Debug.WriteLine($"Saved: {filePath}");
             }
+        }
