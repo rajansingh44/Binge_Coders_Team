@@ -327,23 +327,24 @@ namespace NeoCortexApiSample
         }
         }
 
-        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
         {
             // Ensure the output directory exists
             Directory.CreateDirectory(outputFolder);
 
+            // Generate a consistent timestamp for all files in this execution
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Millisecond precision
+
             // Loop through each permanence array and save it
             for (int i = 0; i < normalizedPermanence.Count; i++)
             {
-                // Generate a unique filename using timestamp and index
-                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Adds millisecond precision
                 string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
 
-                using (StreamWriter writer = new StreamWriter(filePath))
+                using (var writer = new StreamWriter(filePath))
                 {
-                    for (int row = 0; row < 32; row++)
+                    foreach (var line in Enumerable.Range(0, 32)
+                                                   .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32))))
                     {
-                        string line = string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32));
                         writer.WriteLine(line);
                     }
                 }
