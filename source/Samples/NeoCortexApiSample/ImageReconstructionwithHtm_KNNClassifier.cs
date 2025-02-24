@@ -335,8 +335,15 @@ namespace NeoCortexApiSample
 
                     // Use the existing probability
                     allPermanenceDictionary[inputIndex] = probability;
-
-
+                }
+                //Assinginig the inactive columns Permanence 0
+                for (int inputIndex = 0; inputIndex < maxInput; inputIndex++)
+                {
+                    if (!reconstructedPermanence.ContainsKey(inputIndex))
+                    {
+                        // Key doesn't exist, set the probability to 0
+                        allPermanenceDictionary[inputIndex] = 0.0;
+                    }
                 }
 
             }
