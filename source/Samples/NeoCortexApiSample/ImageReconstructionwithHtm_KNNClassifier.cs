@@ -296,59 +296,53 @@ namespace NeoCortexApiSample
 
             // Print stored SDRs before comparison
             Debug.WriteLine("\n--- STORED SDRs ---");
-            foreach (var label in knnClassifier.StoredSDRs.Keys)
+            foreach (var (label, sdrList) in knnClassifier.StoredSDRs)
             {
-                foreach (var storedSDR in knnClassifier.StoredSDRs[label])
+                foreach (var storedSDR in sdrList)
                 {
                     Debug.WriteLine($"Label: {label}, SDR: {Helpers.StringifyVector(storedSDR)}");
                 }
             }
 
-            // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
-            List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
+            // Normalize permanence values (convert to binary using threshold)
+            var normalizedPermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
 
+            // Store normalized permanence for visualization
+            normalizedPermanence.Add(normalizedPermanenceList.ToArray());
 
-            //Collecting Normalized Permanence List for Visualizing
-            normalizedPermanence.Add(normalizePermanenceList.ToArray());
-            foreach (var permanenceArray in normalizedPermanence)
-            {
-                Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]");
-            }
-            ////Calculating Similarity with encoded Inputs and Reconstructed Inputs
-            //var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
+            // Log the normalized permanence values
+            Debug.WriteLine("\n--- NORMALIZED PERMANENCE ---");
+            normalizedPermanence.ForEach(permanenceArray =>
+                Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]"));
 
-            //double[] similarityArray = new double[] { similarity };
-
-            ////Collecting Similarity Data for visualizing
-            //similarityList.Add(similarityArray);
-            //Debug.WriteLine($"Similarity: {similarity}");
+            // Save the normalized permanence results
             SaveNormalizedPermanence(normalizedPermanence, "NormalizedPermanenceOutput");
 
         }
-        }
 
-private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+        // Method to save normalized permanence values to files
+        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
         {
-            // Ensure the output directory exists
+            // Ensure output directory exists
             Directory.CreateDirectory(outputFolder);
 
-            // Generate a consistent timestamp for all files in this execution
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Millisecond precision
+            // Generate a consistent timestamp for file naming
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
 
-            // Loop through each permanence array and save it
+            // Save each normalized permanence array to a separate file
             for (int i = 0; i < normalizedPermanence.Count; i++)
             {
                 string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
 
                 using (var writer = new StreamWriter(filePath))
                 {
-                    foreach (var line in Enumerable.Range(0, 32)
-                                                   .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32))))
-                    {
-                        writer.WriteLine(line);
-                    }
+                    Enumerable.Range(0, 32)
+                              .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32)))
+                              .ToList()
+                              .ForEach(writer.WriteLine);
                 }
 
                 Debug.WriteLine($"Saved: {filePath}");
             }
         }
+
