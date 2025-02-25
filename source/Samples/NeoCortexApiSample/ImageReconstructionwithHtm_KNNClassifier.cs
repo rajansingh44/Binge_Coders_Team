@@ -329,7 +329,11 @@ namespace NeoCortexApiSample
             }
             Debug.WriteLine("\n--- PREDICTED SDRs ---");
             foreach (var prediction in predictions)
+            {
+                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}");
+                if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+                {
 
-        }
+                }
     }
 }
