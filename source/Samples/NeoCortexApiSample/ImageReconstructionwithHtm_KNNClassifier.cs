@@ -18,7 +18,7 @@ namespace NeoCortexApiSample
 
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
@@ -47,7 +47,6 @@ namespace NeoCortexApiSample
 
             var sp = RunExperimentWithKNNClassifier(cfg, inputPrefix);
         }
-
         private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
@@ -65,7 +64,7 @@ namespace NeoCortexApiSample
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
                 isInStableState = isStable;
-                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
+                Debug.WriteLine(isInStableState ? "Entered STABLE state." : "INSTABLE STATE.");
             }, requiredSimilarityThreshold: 0.975);
 
             SpatialPooler sp = new SpatialPooler(hpa);
@@ -109,10 +108,34 @@ namespace NeoCortexApiSample
             var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7);
             foreach (var prediction in predictions)
             {
-                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Accuracy: {prediction.Similarity}");
+                Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
             }
 
             return (sp, knnClassifier);
         }
-    }
-}
+
+        // Method to save normalized permanence values to files
+        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+        {
+            // Ensure output directory exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Generate a consistent timestamp for file naming
+            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
+
+            // Save each normalized permanence array to a separate file
+            for (int i = 0; i < normalizedPermanence.Count; i++)
+            {
+                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
+
+                using (var writer = new StreamWriter(filePath))
+                {
+                    Enumerable.Range(0, 32)
+                              .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32)))
+                              .ToList()
+                              .ForEach(writer.WriteLine);
+                }
+
+                Debug.WriteLine($"Saved: {filePath}");
+            }
+        }
