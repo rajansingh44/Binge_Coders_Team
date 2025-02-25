@@ -345,6 +345,9 @@ namespace NeoCortexApiSample
                         allPermanenceDictionary[inputIndex] = 0.0;
                     }
                 }
+                // Sort the dictionary by keys
+                var sortedAllPermanenceDictionary = allPermanenceDictionary.OrderBy(kvp => kvp.Key);
+
 
             }
         }
