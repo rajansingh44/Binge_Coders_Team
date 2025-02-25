@@ -327,6 +327,8 @@ namespace NeoCortexApiSample
                 Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}, Similarity: {prediction.Similarity}");
 
             }
+            Debug.WriteLine("\n--- PREDICTED SDRs ---");
+            foreach (var prediction in predictions)
 
         }
     }
