@@ -347,6 +347,8 @@ namespace NeoCortexApiSample
                 }
                 // Sort the dictionary by keys
                 var sortedAllPermanenceDictionary = allPermanenceDictionary.OrderBy(kvp => kvp.Key);
+                // Convert the sorted dictionary of allpermanences to a list
+                List<double> permanenceValuesList = sortedAllPermanenceDictionary.Select(kvp => kvp.Value).ToList();
 
 
             }
