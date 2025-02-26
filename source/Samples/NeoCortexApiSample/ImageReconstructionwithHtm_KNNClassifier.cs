@@ -329,20 +329,20 @@ namespace NeoCortexApiSample
             // Generate a consistent timestamp for file naming
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
 
-            // Save each normalized permanence array to a separate file
-            for (int i = 0; i < normalizedPermanence.Count; i++)
+            // Iterate through each normalized permanence array and save it to a file
+            foreach (var (permanenceArray, index) in normalizedPermanence.Select((value, idx) => (value, idx)))
             {
-                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
+                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{index}.txt");
 
-                using (var writer = new StreamWriter(filePath))
+                using var writer = new StreamWriter(filePath);
+                foreach (var line in Enumerable.Range(0, 32)
+                                               .Select(row => string.Join(" ", permanenceArray.Skip(row * 32).Take(32))))
                 {
-                    Enumerable.Range(0, 32)
-                              .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32)))
-                              .ToList()
-                              .ForEach(writer.WriteLine);
+                    writer.WriteLine(line);
                 }
 
                 Debug.WriteLine($"Saved: {filePath}");
             }
+
         }
 
