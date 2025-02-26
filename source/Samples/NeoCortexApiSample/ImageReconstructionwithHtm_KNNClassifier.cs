@@ -333,7 +333,12 @@ namespace NeoCortexApiSample
                 Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}");
                 if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
                 {
-
+                    Debug.WriteLine($"Predicted SDR: {string.Join(", ", prediction.PredictedSDRs)}");
                 }
+                else
+                {
+                    Debug.WriteLine("No SDRs found for this prediction.");
+                }
+            }
     }
 }
