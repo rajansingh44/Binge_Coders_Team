@@ -337,18 +337,11 @@ namespace NeoCortexApiSample
                     allPermanenceDictionary[inputIndex] = probability;
                 }
                 //Assinginig the inactive columns Permanence 0
-                for (int inputIndex = 0; inputIndex < maxInput; inputIndex++)
-                {
-                    if (!reconstructedPermanence.ContainsKey(inputIndex))
-                    {
-                        // Key doesn't exist, set the probability to 0
-                        allPermanenceDictionary[inputIndex] = 0.0;
-                    }
-                }
-                // Sort the dictionary by keys
-                var sortedAllPermanenceDictionary = allPermanenceDictionary.OrderBy(kvp => kvp.Key);
-                // Convert the sorted dictionary of allpermanences to a list
-                List<double> permanenceValuesList = sortedAllPermanenceDictionary.Select(kvp => kvp.Value).ToList();
+
+
+                //Collecting Heatmap Data for Visualization
+                heatmapData.Add(permanenceValuesList);
+
 
 
             }
