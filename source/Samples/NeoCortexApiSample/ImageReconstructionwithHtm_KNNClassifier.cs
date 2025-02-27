@@ -330,19 +330,7 @@ namespace NeoCortexApiSample
             string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
 
             // Iterate through each normalized permanence array and save it to a file
-            foreach (var (permanenceArray, index) in normalizedPermanence.Select((value, idx) => (value, idx)))
-            {
-                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{index}.txt");
 
-                using var writer = new StreamWriter(filePath);
-                foreach (var line in Enumerable.Range(0, 32)
-                                               .Select(row => string.Join(" ", permanenceArray.Skip(row * 32).Take(32))))
-                {
-                    writer.WriteLine(line);
-                }
-
-                Debug.WriteLine($"Saved: {filePath}");
-            }
 
         }
 
