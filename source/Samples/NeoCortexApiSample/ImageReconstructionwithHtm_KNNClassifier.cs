@@ -339,6 +339,8 @@ namespace NeoCortexApiSample
                 {
                     Debug.WriteLine("No SDRs found for this prediction.");
                 }
+                var predictedSDRsList = new List<int[]>();
+                foreach (var prediction in predictions)
             }
     }
 }
