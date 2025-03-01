@@ -304,33 +304,56 @@ namespace NeoCortexApiSample
                 }
             }
 
-            // Normalize permanence values (convert to binary using threshold)
-            var normalizedPermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
+            // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
+            List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
 
-            // Store normalized permanence for visualization
-            normalizedPermanence.Add(normalizedPermanenceList.ToArray());
 
-            // Log the normalized permanence values
-            Debug.WriteLine("\n--- NORMALIZED PERMANENCE ---");
-            normalizedPermanence.ForEach(permanenceArray =>
-                Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]"));
+            //Collecting Normalized Permanence List for Visualizing
+            normalizedPermanence.Add(normalizePermanenceList.ToArray());
+            foreach (var permanenceArray in normalizedPermanence)
+            {
+                Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]");
+            }
 
-            // Save the normalized permanence results
+            ////Calculating Similarity with encoded Inputs and Reconstructed Inputs
+            //var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
+
+            //double[] similarityArray = new double[] { similarity };
+
+            ////Collecting Similarity Data for visualizing
+            //similarityList.Add(similarityArray);
+            //Debug.WriteLine($"Similarity: {similarity}");
             SaveNormalizedPermanence(normalizedPermanence, "NormalizedPermanenceOutput");
 
         }
-
-        // Method to save normalized permanence values to files
-        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
-        {
-            // Ensure output directory exists
-            Directory.CreateDirectory(outputFolder);
-
-            // Generate a consistent timestamp for file naming
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-
-            // Iterate through each normalized permanence array and save it to a file
-
-
         }
 
+        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+        {
+            // Ensure the output directory exists
+            Directory.CreateDirectory(outputFolder);
+
+            // Loop through each permanence array and save it
+            for (int i = 0; i < normalizedPermanence.Count; i++)
+            {
+                // Generate a unique filename using timestamp and index
+                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Adds millisecond precision
+                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
+
+                using (StreamWriter writer = new StreamWriter(filePath))
+                {
+                    for (int row = 0; row < 32; row++)
+                    {
+                        string line = string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32));
+                        writer.WriteLine(line);
+                    }
+                }
+
+                Debug.WriteLine($"Saved: {filePath}");
+            }
+        }
+
+
+
+    }
+}
