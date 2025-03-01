@@ -342,7 +342,11 @@ namespace NeoCortexApiSample
                 //Collecting Heatmap Data for Visualization
                 heatmapData.Add(permanenceValuesList);
 
+                //Collecting Encoded Data for Visualization
+                //BinarizedencodedInputs.Add(inputVector);
 
+                //Normalizing Permanence Threshold
+                var ThresholdValue = 40.5;
 
             }
         }
