@@ -341,6 +341,10 @@ namespace NeoCortexApiSample
                 }
                 var predictedSDRsList = new List<int[]>();
                 foreach (var prediction in predictions)
+                    if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+                    {
+                        predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
+                    }
             }
     }
 }
