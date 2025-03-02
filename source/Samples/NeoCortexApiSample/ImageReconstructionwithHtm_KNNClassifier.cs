@@ -345,6 +345,10 @@ namespace NeoCortexApiSample
                     {
                         predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
                     }
+                // Pass the predicted SDRs to the restructuring function
+                RunRustructuringExperiment2(sp, predictedSDRsList);
+
+                return (sp, knnClassifier);
             }
     }
 }
