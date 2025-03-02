@@ -341,12 +341,7 @@ namespace NeoCortexApiSample
                 string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
 
                 using (StreamWriter writer = new StreamWriter(filePath))
-                {
-                    for (int row = 0; row < 32; row++)
-                    {
-                        string line = string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32));
-                        writer.WriteLine(line);
-                    }
+
                 }
 
                 Debug.WriteLine($"Saved: {filePath}");
