@@ -492,14 +492,7 @@ namespace NeoCortexApiSample
                 // Convert the sorted dictionary of allpermanences to a list
                 List<double> permanenceValuesList = sortedAllPermanenceDictionary.Select(kvp => kvp.Value).ToList();
 
-                //Collecting Heatmap Data for Visualization
-                heatmapData.Add(permanenceValuesList);
 
-                //Collecting Encoded Data for Visualization
-                //BinarizedencodedInputs.Add(inputVector);
-
-                //Normalizing Permanence Threshold
-                var ThresholdValue = 25.5;
 
                 // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
                 List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
