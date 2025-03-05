@@ -229,7 +229,7 @@ namespace NeoCortexApiSample
             string outputFolder = "Output"; // Output folder
             Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
 
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.jpg");
             int imgSize = 28;
             string testName = "test_image";
 
