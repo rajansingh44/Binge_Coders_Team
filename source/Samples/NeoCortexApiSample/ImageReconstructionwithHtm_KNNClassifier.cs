@@ -328,29 +328,58 @@ namespace NeoCortexApiSample
 
             }
             Debug.WriteLine("\n--- PREDICTED SDRs ---");
-            foreach (var prediction in predictions)
+            //foreach (var prediction in predictions)
+            //{
+            //    Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}");
+            //    if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+            //    {
+            //        Debug.WriteLine($"Predicted SDR: {string.Join(", ", prediction.PredictedSDRs)}");
+            //    }
+            //    else
+            //    {
+            //        Debug.WriteLine("No SDRs found for this prediction.");
+            //    }
+            //    var predictedSDRsList = new List<int[]>();
+            //    foreach (var prediction in predictions)
+            //        if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+            //        {
+            //            predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
+            //        }
+            //    // Pass the predicted SDRs to the restructuring function
+            //    RunRustructuringExperiment2(sp, predictedSDRsList);
+
+            //    return (sp, knnClassifier);
+            foreach (var result in results)
             {
-                Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}");
-                if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+                Debug.WriteLine($"Output Label: {result.OutputLabel}");
+
+                if (result.OutputData != null && result.OutputData.Count > 0)
                 {
-                    Debug.WriteLine($"Predicted SDR: {string.Join(", ", prediction.PredictedSDRs)}");
+                    Debug.WriteLine($"Output Data: {string.Join(", ", result.OutputData)}");
                 }
                 else
                 {
-                    Debug.WriteLine("No SDRs found for this prediction.");
+                    Debug.WriteLine("No data available for this output.");
                 }
-                var predictedSDRsList = new List<int[]>();
-                foreach (var prediction in predictions)
-                    if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
-                    {
-                        predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
-                    }
-                // Pass the predicted SDRs to the restructuring function
-                RunRustructuringExperiment2(sp, predictedSDRsList);
 
-                return (sp, knnClassifier);
-                Debug.WriteLine(predictedSDRsList);
-            }
+            //    var outputDataList = new List<int[]>();
+
+            //    foreach (var res in results)
+            //    {
+            //        if (res.OutputData != null && res.OutputData.Count > 0)
+            //        {
+            //            outputDataList.Add(res.OutputData.ToArray());
+            //        }
+            //    }
+
+            //    // Process the output data with the restructuring function
+            //    ExecuteRestructuringProcess(processor, outputDataList);
+
+            //    return (processor, classifier);
+            //}
+
+
         }
+    }
     }
 }
