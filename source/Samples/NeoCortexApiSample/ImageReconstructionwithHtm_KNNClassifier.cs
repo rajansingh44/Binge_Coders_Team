@@ -59,15 +59,21 @@ namespace NeoCortexApiSample
             //RunRustructuringExperiment(sp);
 
         }
-        private (SpatialPooler, HtmClassifier<string, int[]>) RunExperimentWithHTMClassifier(HtmConfig cfg, string inputPrefix)
+        private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 64 * 64;
+            int numColumns = 84 * 84;
             string trainingFolder = "Sample\\TestFiles";
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
+            string outputFolder = Path.Combine("Output");
+            string sdrFolder = Path.Combine("SDRs");
+
+            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(sdrFolder);
+
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.jpg");
+            int imgSize = 52;
             string testName = "test_image";
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
@@ -79,7 +85,7 @@ namespace NeoCortexApiSample
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
 
-            HtmClassifier<string, int[]> classifier = new HtmClassifier<string, int[]>();
+            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
 
             int[] activeArray = new int[numColumns];
             int maxCycles = 5;
@@ -89,18 +95,31 @@ namespace NeoCortexApiSample
             {
                 foreach (var image in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                    // **1. Binarize Image and Save in Output Folder**
+                    string binarizedImageFile = NeoCortexUtils.BinarizeImage(image, imgSize, testName);
+                    Console.WriteLine($"Processing Binarized File: {binarizedImageFile}");
+                    string binarizedFilePath = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(image)}.txt");
+                    File.Copy(binarizedImageFile, binarizedFilePath, true);
 
+                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binarizedFilePath).ToArray();
+                    Console.WriteLine($"Input Vector: {string.Join(",", inputVector)}");
                     sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+                    var activeCols = ArrayUtils.IndexWhere(activeArray, el => el == 1);
 
-                    // Train the classifier: associate active columns with the image name
-                    classifier.Learn(image, activeCols);
+                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
 
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
+                    knnClassifier.Learn(image, activeCells);
+
+                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
                     Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
                     Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
+
+                    // **2. Store SDR in SDRs Folder**
+                    string sdrFilePath = Path.Combine(sdrFolder, $"{Path.GetFileNameWithoutExtension(image)}.csv");
+                    using (StreamWriter writer = new StreamWriter(sdrFilePath))
+                    {
+                        writer.WriteLine(string.Join(",", activeCols));
+                    }
                 }
 
                 currentCycle++;
@@ -109,18 +128,19 @@ namespace NeoCortexApiSample
                     break;
             }
 
-            // Example prediction after training
-            string testImage = trainingImages[0];
-            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
-            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
+            // **3. Debug Output for Stored SDRs**
+            foreach (var sdrFile in Directory.GetFiles(sdrFolder, "*.csv"))
+            {
+                int[] storedSDR = File.ReadAllText(sdrFile)
+                                    .Split(',')
+                                    .Where(s => !string.IsNullOrWhiteSpace(s))
+                                    .Select(int.Parse)
+                                    .ToArray();
 
-            sp.compute(testInputVector, activeArray, false);
-            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+                Debug.WriteLine($"Stored SDR for {Path.GetFileName(sdrFile)}: {string.Join(", ", storedSDR)}");
+            }
 
-            var predictions = classifier.GetPredictedInputValues(testActiveCols, 1);
-            Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
-
-            return (sp, classifier);
+            return (sp, knnClassifier);
         }
 
         private void RunRustructuringExperiment(SpatialPooler sp)
