@@ -362,9 +362,9 @@ namespace NeoCortexApiSample
                     Debug.WriteLine("No data available for this output.");
                 }
 
-            //    var outputDataList = new List<int[]>();
+                var outputDataList = new List<int[]>();
 
-            //    foreach (var res in results)
+                foreach (var res in results)
             //    {
             //        if (res.OutputData != null && res.OutputData.Count > 0)
             //        {
@@ -372,11 +372,11 @@ namespace NeoCortexApiSample
             //        }
             //    }
 
-            //    // Process the output data with the restructuring function
-            //    ExecuteRestructuringProcess(processor, outputDataList);
+                    //    // Process the output data with the restructuring function
+                    //    ExecuteRestructuringProcess(processor, outputDataList);
 
-            //    return (processor, classifier);
-            //}
+                    //    return (processor, classifier);
+                    //}
 
 
         }
