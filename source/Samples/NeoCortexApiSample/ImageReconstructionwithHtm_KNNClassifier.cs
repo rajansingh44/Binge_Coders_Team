@@ -494,15 +494,7 @@ namespace NeoCortexApiSample
 
 
 
-                // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
-                List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
-
-                //Collecting Normalized Permanence List for Visualizing
-                normalizedPermanence.Add(normalizePermanenceList.ToArray());
-                foreach (var permanenceArray in normalizedPermanence)
-                {
-                    Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]");
-                }
+                
 
                 ////Calculating Similarity with encoded Inputs and Reconstructed Inputs
                 //var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
