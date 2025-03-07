@@ -355,16 +355,7 @@ private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string o
 
             // Loop through each permanence array and save it
             foreach (var (array, index) in normalizedPermanence.Select((arr, idx) => (arr, idx)))
-            {
-                // Generate a unique filename using timestamp and index
-                string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff"); // Adds millisecond precision
-                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{index}.txt");
 
-                // Write array contents to the file
-                File.WriteAllLines(filePath, array.Select(n => n.ToString()));
-
-                Debug.WriteLine($"Saved: {filePath}");
-            }
         }
 
     }
