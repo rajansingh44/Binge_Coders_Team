@@ -352,17 +352,6 @@ namespace NeoCortexApiSample
                     sp.compute(inputVector, activeArray, true);
                     var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
 
-                    // Convert activeCols to Cell[] format
-                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-
-                    // Train the KNN classifier: associate active columns with the image name
-                    knnClassifier.Learn(image, activeCells);
-
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
-                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-
-                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
 
 
                 }
