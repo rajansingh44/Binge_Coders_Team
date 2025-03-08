@@ -365,21 +365,14 @@ namespace NeoCortexApiSample
                 var outputDataList = new List<int[]>();
 
                 foreach (var res in results)
-            //    {
-            //        if (res.OutputData != null && res.OutputData.Count > 0)
-            //        {
-            //            outputDataList.Add(res.OutputData.ToArray());
-            //        }
-            //    }
+                {
+                    if (res.OutputData != null && res.OutputData.Count > 0)
+                    {
+                        outputDataList.Add(res.OutputData.ToArray());
+                    }
+                   
 
-                    //    // Process the output data with the restructuring function
-                    //    ExecuteRestructuringProcess(processor, outputDataList);
-
-                    //    return (processor, classifier);
-                    //}
-
-
-        }
+                }
     }
     }
 }
