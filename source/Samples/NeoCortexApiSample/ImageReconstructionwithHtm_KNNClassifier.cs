@@ -370,9 +370,15 @@ namespace NeoCortexApiSample
                     {
                         outputDataList.Add(res.OutputData.ToArray());
                     }
-                   
-
                 }
-    }
+
+                // Process the output data with the restructuring function
+                ExecuteRestructuringProcess(processor, outputDataList);
+
+                return (processor, classifier);
+            }
+
+        }
+            }
     }
 }
