@@ -121,7 +121,7 @@ namespace NeoCortexApi.Classifiers
     {
         private int _nNeighbors = 1; // From Numenta's example 1 is default
         private DefaultDictionary<string, List<int[]>> _sdrMap = new DefaultDictionary<string, List<int[]>>();
-        private int _sdrs = 10;
+        private int _sdrs = 50;
 
         /// <summary>
         /// This method compares a single value with a sequence of values from given sequence.
@@ -260,10 +260,30 @@ namespace NeoCortexApi.Classifiers
             }
 
             foreach (var mappings in mappedElements)
-                mappings.Value.Sort(); //Sorting values according to distance
+                mappings.Value.Sort(); // Sorting values according to distance
 
-            return Voting(mappedElements, howMany) as List<ClassifierResult<TIN>>;
+            // Get predicted results from Voting
+            var classifierResults = Voting(mappedElements, howMany);
+
+            // Optionally, return the predicted SDRs along with the predicted labels
+            foreach (var result in classifierResults)
+            {
+                var predictedLabel = result.PredictedInput;
+
+                if (_sdrMap.ContainsKey(predictedLabel))
+                {
+                    var predictedSdRs = _sdrMap[predictedLabel];
+
+                    // Shuffle SDRs slightly to introduce variability
+                    predictedSdRs = predictedSdRs.OrderBy(_ => Guid.NewGuid()).ToList();
+
+                    result.SDRs = predictedSdRs;
+                }
+            }
+
+            return classifierResults as List<ClassifierResult<TIN>>;
         }
+
 
         /// <summary>
         /// This Function adds and removes SDRs to the model.
@@ -273,15 +293,29 @@ namespace NeoCortexApi.Classifiers
         public void Learn(TIN input, Cell[] cells)
         {
             var label = input as string;
-            int[] cellIndicies = cells.Select(idx => idx.Index).ToArray();
+            int[] cellIndices = cells.Select(idx => idx.Index).ToArray();
 
-            if (!_sdrMap[label].Exists(seq => cellIndicies.SequenceEqual(seq)))
+            // 🔹 Append timestamp for unique key to avoid overwriting
+            string uniqueLabel = $"{label}_{DateTime.Now.Ticks}";
+
+            // 🔹 Introduce slight randomness to SDR indices for uniqueness
+            Random rand = new Random();
+            for (int i = 0; i < cellIndices.Length; i++)
             {
-                if (_sdrMap[label].Count > _sdrs)
-                    _sdrMap[label].RemoveAt(0);
-                _sdrMap[label].Add(cellIndicies);
+                cellIndices[i] += rand.Next(-5, 6);  // Small perturbation in index values
+                cellIndices[i] = Math.Max(cellIndices[i], 0); // Ensure no negative indices
+            }
+
+            // 🔹 Store the SDRs uniquely
+            if (!_sdrMap[uniqueLabel].Exists(seq => cellIndices.SequenceEqual(seq)))
+            {
+                if (_sdrMap[uniqueLabel].Count > _sdrs)
+                    _sdrMap[uniqueLabel].RemoveAt(0);
+
+                _sdrMap[uniqueLabel].Add(cellIndices);
             }
         }
+
 
         /// <summary>
         /// Clears the model from all the stored sequences.
