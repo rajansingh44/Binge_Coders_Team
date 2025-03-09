@@ -361,6 +361,12 @@ namespace NeoCortexApiSample
                 if (currentCycle >= maxCycles)
                     break;
             }
+            String knnSimilarityFolder = ".\\KNNSimilarityPlot";
+            if (Directory.Exists(knnSimilarityFolder)) Directory.Delete(knnSimilarityFolder, true);
+            // Recreate the folder
+            Directory.CreateDirectory(knnSimilarityFolder);
+            // Define the file name
+            string knnSimilarityFile = "combined_similarity_plot_KNN_Image_Inputs.png";
 
             // Test the classifier with the first training image (or any specific test image)
             string testImage = trainingImages[0];
