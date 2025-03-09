@@ -9,30 +9,25 @@ using System.IO;
 using System.Linq;
 using NeoCortexApi.Classifiers;
 using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageBinarizerSpatialPattern
+    internal class ImageReconstructionwithHtm_KNNClassifier
     {
         public string inputPrefix { get; private set; }
 
-        /// <summary>
-        /// Implements an experiment that demonstrates how to learn spatial patterns.
-        /// SP will learn every presented Image input in multiple iterations.
-        /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
-            // We will build a slice of the cortex with the given number of mini-columns
-            int numColumns = 64 * 64;
-            // The Size of the Image Height and width is 28 pixel
-            int imageSize = 28;
-            var colDims = new int[] { 64, 64 };
+            int numColumns = 84 * 84;
+            int imageSize = 52;
+            var colDims = new int[] { 84, 84 };
 
-            // This is a set of configuration parameters used in the experiment.
             HtmConfig cfg = new HtmConfig(new int[] { imageSize, imageSize }, new int[] { numColumns })
             {
                 CellsPerColumn = 10,
@@ -42,24 +37,23 @@ namespace NeoCortexApiSample
                 MaxBoost = maxBoost,
                 DutyCyclePeriod = 100,
                 MinPctOverlapDutyCycles = minOctOverlapCycles,
-                GlobalInhibition = false,
                 NumActiveColumnsPerInhArea = 0.02 * numColumns,
-                PotentialRadius = (int)(0.15 * imageSize * imageSize),
                 LocalAreaDensity = -1,
-                ActivationThreshold = 10,
                 MaxSynapsesPerSegment = (int)(0.01 * numColumns),
                 Random = new ThreadSafeRandom(42),
                 StimulusThreshold = 10,
+                PotentialRadius = (int)(0.5 * imageSize * imageSize),
+                GlobalInhibition = true,
+                ActivationThreshold = 5
             };
 
-            //Runnig the Experiment
-            //var sp = RunExperiment(cfg, inputPrefix);
-            var sp = RunExperimentWithKNNClassifier(cfg, inputPrefix);
-            //Runing the Reconstruction Method Experiment
-            //RunRustructuringExperiment(sp);
+            var (sp, knnClassifier, predictedSDRsList) = RunExperimentWithKNNClassifier(cfg, inputPrefix);
 
+            // Run the Reconstruction Experiment
+            RunRustructuringExperiment2(sp, predictedSDRsList);
         }
-        private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
+
+        private (SpatialPooler, KNeighborsClassifier<string, int[]>, List<int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
             bool isInStableState = false;
@@ -76,292 +70,204 @@ namespace NeoCortexApiSample
             int imgSize = 52;
             string testName = "test_image";
 
+            Debug.WriteLine($"Initializing Training with {trainingImages.Length} images.");
+
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
                 isInStableState = isStable;
-                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
+                Debug.WriteLine(isInStableState ? "🚀 Entered STABLE state." : "⚠ INSTABLE STATE.");
             }, requiredSimilarityThreshold: 0.975);
 
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
 
             KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
+            List<int[]> predictedSDRsList = new List<int[]>();
 
             int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
+            int maxCycles = 50;
             int currentCycle = 0;
 
+            // 🔄 *Training Phase*
             while (!isInStableState && currentCycle < maxCycles)
             {
+                Debug.WriteLine($"\n🔄 Training Cycle {currentCycle + 1}/{maxCycles} 🔄");
+
                 foreach (var image in trainingImages)
                 {
-                    // **1. Binarize Image and Save in Output Folder**
-                    string binarizedImageFile = NeoCortexUtils.BinarizeImage(image, imgSize, testName);
-                    Console.WriteLine($"Processing Binarized File: {binarizedImageFile}");
-                    string binarizedFilePath = Path.Combine(outputFolder, $"{Path.GetFileNameWithoutExtension(image)}.txt");
-                    File.Copy(binarizedImageFile, binarizedFilePath, true);
-
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(binarizedFilePath).ToArray();
-                    Console.WriteLine($"Input Vector: {string.Join(",", inputVector)}");
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, el => el == 1);
-
-                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-
-                    knnClassifier.Learn(image, activeCells);
-
-                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
-                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-
-                    // **2. Store SDR in SDRs Folder**
-                    string sdrFilePath = Path.Combine(sdrFolder, $"{Path.GetFileNameWithoutExtension(image)}.csv");
-                    using (StreamWriter writer = new StreamWriter(sdrFilePath))
+                    try
                     {
-                        writer.WriteLine(string.Join(",", activeCols));
+                        Debug.WriteLine($"🖼 Processing Image: {image}");
+
+                        // ⿡ *Binarize Image*
+                        string binarizedImageFile = BinarizeImageToFixedSize(image, imgSize);
+                        Debug.WriteLine($"📄 Binarized Image File: {binarizedImageFile}");
+
+                        // ⿢ *Read Input Vector*
+                        int[] inputVector = ReadBinaryTextFile(binarizedImageFile);
+                        Debug.WriteLine($"🔢 Input Vector Length: {inputVector.Length}");
+
+                        // ⿣ *Compute Active Columns*
+                        sp.compute(inputVector, activeArray, true);
+                        var activeCols = ArrayUtils.IndexWhere(activeArray, el => el == 1);
+                        Debug.WriteLine($"📊 Active Columns Count: {activeCols.Length}");
+
+                        // ⿤ *Train KNN*
+                        var activeCells = activeCols.Select(colIdx => new NeoCortexApi.Entities.Cell { Index = colIdx }).ToArray();  // Create Cell[] from active columns
+                        knnClassifier.Learn(image, activeCells);  // Learning phase: learn SDRs from active columns
+                        Debug.WriteLine($"🧠 KNN Learning from {image}, Stored SDR: {string.Join(",", activeCols)}");
+
+                        // ⿥ *Store SDR*
+                        predictedSDRsList.Add(activeCols);
+                        string sdrFilePath = Path.Combine(sdrFolder, $"{Path.GetFileNameWithoutExtension(image)}.csv");
+                        File.WriteAllText(sdrFilePath, string.Join(",", activeCols));
+                        Debug.WriteLine($"💾 Stored SDR for {image} at {sdrFilePath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"❌ Error processing {image}: {ex.Message}");
                     }
                 }
 
                 currentCycle++;
-
-                if (currentCycle >= maxCycles)
-                    break;
+                Debug.WriteLine($"✅ Completed Cycle {currentCycle}.");
             }
 
-            // **3. Debug Output for Stored SDRs**
-            foreach (var sdrFile in Directory.GetFiles(sdrFolder, "*.csv"))
+            if (!isInStableState)
             {
-                int[] storedSDR = File.ReadAllText(sdrFile)
-                                    .Split(',')
-                                    .Where(s => !string.IsNullOrWhiteSpace(s))
-                                    .Select(int.Parse)
-                                    .ToArray();
-
-                Debug.WriteLine($"Stored SDR for {Path.GetFileName(sdrFile)}: {string.Join(", ", storedSDR)}");
+                Debug.WriteLine("⚠ Training completed, but stable state not reached.");
+            }
+            else
+            {
+                Debug.WriteLine("✅ Training completed successfully.");
             }
 
-            return (sp, knnClassifier);
+            // *🔍 Log and Pass Predicted SDRs*
+            Debug.WriteLine("\n--- PREDICTED SDRs ---");
+            foreach (var sdr in predictedSDRsList)
+            {
+                Debug.WriteLine($"Predicted SDR: {string.Join(", ", sdr)}");
+            }
+
+            // *🔍 Log Stored SDRs Before Classification*
+            Debug.WriteLine("\n--- STORED SDRs ---");
+            foreach (var label in knnClassifier.StoredSDRs.Keys)
+            {
+                foreach (var storedSDR in knnClassifier.StoredSDRs[label])
+                {
+                    Debug.WriteLine($"Label: {label}, SDR: {string.Join(", ", storedSDR)}");
+                }
+            }
+
+            // *🔎 Classification & Similarity Scores*
+            Debug.WriteLine("\n--- CLASSIFICATION RESULTS ---");
+            foreach (var sdr in predictedSDRsList)
+            {
+                // Convert SDR (int[]) to Cell[] before passing to GetPredictedInputValues
+                var activeCells = sdr.Select(index => new NeoCortexApi.Entities.Cell { Index = index }).ToArray();
+
+                // Get predictions (Top 5)
+                var predictions = knnClassifier.GetPredictedInputValues(activeCells, 5); // Top 5 predictions
+
+                Debug.WriteLine($"\n🔹 SDR: {string.Join(", ", sdr)}");
+
+                foreach (var prediction in predictions)
+                {
+                    Debug.WriteLine($"🏷 Predicted Label: {prediction.PredictedInput} | Similarity: {prediction.Similarity:F3}");
+                }
+            }
+
+            // *🔹 Pass the predicted SDRs to the restructuring function*
+            RunRustructuringExperiment2(sp, predictedSDRsList);
+            Debug.WriteLine("\n🔄 Running Restructuring Experiment...");
+
+            return (sp, knnClassifier, predictedSDRsList);
         }
 
-        private void RunRustructuringExperiment(SpatialPooler sp)
+
+
+
+
+        /// <summary>
+        /// Reconstructs images from predicted SDRs.
+        /// </summary>
+        private void RunRustructuringExperiment2(SpatialPooler sp, List<int[]> predictedSDRsList)
         {
-            // Path to the folder containing training images
-            string trainingFolder = "Sample\\TestFiles";
-            // Get all image files matching the specified prefix
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            // Size of the images
-            int imgSize = 28;
-            // Name for the test image
-            string testName = "test_image";
-            // Array to hold active columns
-            int[] activeArray = new int[64 * 64];
-            // List to store heatmap data
-            List<List<double>> heatmapData = new List<List<double>>();
-            // Initialize a list to get normalized permanence values.
-            List<int[]> BinarizedencodedInputs = new List<int[]>();
-            // List to store normalized permanence values
             List<int[]> normalizedPermanence = new List<int[]>();
-            // List to store similarity values
-            List<double[]> similarityList = new List<double[]>();
-            foreach (var Image in trainingImages)
+
+            foreach (var predictedSDR in predictedSDRsList)
             {
-                string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{Image}", imgSize, testName);
+                Debug.WriteLine("Reconstructing permanence for SDR...");
 
-                // Read input csv file into array
-                int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                // Reconstruct the permanence for the predicted SDR
+                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
 
-                // Initialize arrays and lists for computations
-                int[] oldArray = new int[activeArray.Length];
-                List<double[,]> overlapArrays = new List<double[,]>();
-                List<double[,]> bostArrays = new List<double[,]>();
-
-                // Compute spatial pooling on the input vector
-                sp.compute(inputVector, activeArray, true);
-                var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-
-                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(activeCols);
-
-                int maxInput = inputVector.Length;
-
-                // Create a new dictionary to store extended probabilities
                 Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
-                // Iterate through all possible inputs using a foreach loop
                 foreach (var kvp in reconstructedPermanence)
                 {
-                    int inputIndex = kvp.Key;
-                    double probability = kvp.Value;
-
-                    // Use the existing probability
-                    allPermanenceDictionary[inputIndex] = probability;
+                    allPermanenceDictionary[kvp.Key] = kvp.Value;
                 }
 
-                //Assinginig the inactive columns Permanence 0
-                for (int inputIndex = 0; inputIndex < maxInput; inputIndex++)
+                int imgsize = 52 * 52;
+
+                // Assign inactive columns permanence 0
+                for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
                 {
                     if (!reconstructedPermanence.ContainsKey(inputIndex))
                     {
-                        // Key doesn't exist, set the probability to 0
                         allPermanenceDictionary[inputIndex] = 0.0;
                     }
                 }
 
-                // Sort the dictionary by keys
-                var sortedAllPermanenceDictionary = allPermanenceDictionary.OrderBy(kvp => kvp.Key);
-                // Convert the sorted dictionary of allpermanences to a list
-                List<double> permanenceValuesList = sortedAllPermanenceDictionary.Select(kvp => kvp.Value).ToList();
+                // Normalize permanence values
+                var ThresholdValue = 67.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
 
-                //Collecting Heatmap Data for Visualization
-                heatmapData.Add(permanenceValuesList);
-
-                //Collecting Encoded Data for Visualization
-                BinarizedencodedInputs.Add(inputVector);
-
-                //Normalizing Permanence Threshold
-                var ThresholdValue = 30.5;
-
-                // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
-                List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
-
-                //Collecting Normalized Permanence List for Visualizing
                 normalizedPermanence.Add(normalizePermanenceList.ToArray());
 
-                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
-                var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
-
-                double[] similarityArray = new double[] { similarity };
-
-                //Collecting Similarity Data for visualizing
-                similarityList.Add(similarityArray);
-                Debug.WriteLine($"Similarity: {similarity}");
-
+                // Save the reconstructed binary image
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
             }
         }
 
-
-
-        private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
+        private int[] ReadBinaryTextFile(string filePath)
         {
-            var mem = new Connections(cfg);
-            bool isInStableState = false;
+            var lines = File.ReadAllLines(filePath);
+            return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
+        }
 
-            int numColumns = 64 * 64;
-            string trainingFolder = "Sample\\TestFiles";
-            string outputFolder = "Output"; // Output folder
-            Directory.CreateDirectory(outputFolder); // Ensure the output folder exists
+        private string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        {
+            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
 
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.jpg");
-            int imgSize = 28;
-            string testName = "test_image";
-
-            HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
+            using (Bitmap originalImage = new Bitmap(imagePath))
+            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
             {
-                isInStableState = isStable;
-                Debug.WriteLine(isStable ? "Entered STABLE state." : "INSTABLE STATE.");
-            }, requiredSimilarityThreshold: 0.975);
+                int[] binaryArray = new int[gridSize * gridSize];
 
-            SpatialPooler sp = new SpatialPooler(hpa);
-            sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
-
-            KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
-
-            int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
-            int currentCycle = 0;
-
-            // Training loop
-            while (!isInStableState && currentCycle < maxCycles)
-            {
-                foreach (var image in trainingImages)
+                for (int y = 0; y < gridSize; y++)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
-
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-
-                    // Convert activeCols to Cell[] format
-                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-
-                    // Train the KNN classifier: associate active columns with the image name
-                    knnClassifier.Learn(image, activeCells);
-
-                    Debug.WriteLine($"'Cycle: {currentCycle} - Image-Input: {image}'");
-                    Debug.WriteLine($"INPUT :{Helpers.StringifyVector(inputVector)}");
-                    Debug.WriteLine($"SDR:{Helpers.StringifyVector(activeCols)}\n");
-
-                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
-
-
+                    for (int x = 0; x < gridSize; x++)
+                    {
+                        Color pixelColor = resizedImage.GetPixel(x, y);
+                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
+                    }
                 }
 
-                currentCycle++;
-
-                if (currentCycle >= maxCycles)
-                    break;
-            }
-
-            // Test the classifier with the first training image (or any specific test image)
-            string testImage = trainingImages[0];
-            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
-            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
-
-            sp.compute(testInputVector, activeArray, false);
-            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-            var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-
-            // Log the test SDR before classification
-            Debug.WriteLine("\n--- TEST SDR ---");
-            Debug.WriteLine($"Test Image: {testImage}");
-            Debug.WriteLine($"Test SDR: {Helpers.StringifyVector(testActiveCols)}\n");
-
-            // Print stored SDRs before comparison
-            Debug.WriteLine("\n--- STORED SDRs ---");
-            foreach (var (label, sdrList) in knnClassifier.StoredSDRs)
-            {
-                foreach (var storedSDR in sdrList)
+                using (StreamWriter writer = new StreamWriter(outputFile))
                 {
-                    Debug.WriteLine($"Label: {label}, SDR: {Helpers.StringifyVector(storedSDR)}");
+                    for (int i = 0; i < gridSize; i++)
+                    {
+                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
+                    }
                 }
             }
 
-            // Normalize permanences (0 and 1) based on the threshold value and convert them to a list of integers.
-            List<int> normalizePermanenceList = Helpers.ThresholdingProbabilities(permanenceValuesList, ThresholdValue);
-
-
-            //Collecting Normalized Permanence List for Visualizing
-            normalizedPermanence.Add(normalizePermanenceList.ToArray());
-            foreach (var permanenceArray in normalizedPermanence)
-            {
-                Debug.WriteLine($"[{string.Join(", ", permanenceArray)}]");
-            }
-
-            ////Calculating Similarity with encoded Inputs and Reconstructed Inputs
-            //var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
-
-            //double[] similarityArray = new double[] { similarity };
-
-            ////Collecting Similarity Data for visualizing
-            //similarityList.Add(similarityArray);
-            //Debug.WriteLine($"Similarity: {similarity}");
-            SaveNormalizedPermanence(normalizedPermanence, "NormalizedPermanenceOutput");
-
+            return outputFile;
         }
-        }
-
-private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
-        {
-            // Ensure the output directory exists
-            Directory.CreateDirectory(outputFolder);
-
-            // Loop through each permanence array and save it
-            foreach (var (array, index) in normalizedPermanence.Select((arr, idx) => (arr, idx)))
-
-        }
-
-    }
-}
-
-
-
     }
 }
