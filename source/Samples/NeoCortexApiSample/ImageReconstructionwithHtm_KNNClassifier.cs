@@ -9,22 +9,24 @@ using System.IO;
 using System.Linq;
 using NeoCortexApi.Classifiers;
 using System.Text;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageBinarizerSpatialPattern
+    internal class ImageReconstructionwithHtm_KNNClassifier
     {
         public string inputPrefix { get; private set; }
 
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
-            int numColumns = 64 * 64;
-            int imageSize = 28;
-            var colDims = new int[] { 64, 64 };
+            int numColumns = 84 * 84;
+            int imageSize = 52;
+            var colDims = new int[] { 84, 84 };
 
             HtmConfig cfg = new HtmConfig(new int[] { imageSize, imageSize }, new int[] { numColumns })
             {
@@ -35,107 +37,180 @@ namespace NeoCortexApiSample
                 MaxBoost = maxBoost,
                 DutyCyclePeriod = 100,
                 MinPctOverlapDutyCycles = minOctOverlapCycles,
-                GlobalInhibition = false,
                 NumActiveColumnsPerInhArea = 0.02 * numColumns,
-                PotentialRadius = (int)(0.15 * imageSize * imageSize),
                 LocalAreaDensity = -1,
-                ActivationThreshold = 10,
                 MaxSynapsesPerSegment = (int)(0.01 * numColumns),
                 Random = new ThreadSafeRandom(42),
                 StimulusThreshold = 10,
+                PotentialRadius = (int)(0.5 * imageSize * imageSize),
+                GlobalInhibition = true,
+                ActivationThreshold = 5
             };
 
-            var sp = RunExperimentWithKNNClassifier(cfg, inputPrefix);
+            var (sp, knnClassifier, predictedSDRsList) = RunExperimentWithKNNClassifier(cfg, inputPrefix);
+
+            // Run the Reconstruction Experiment
+            RunRustructuringExperiment2(sp, predictedSDRsList);
         }
-        private (SpatialPooler, KNeighborsClassifier<string, int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
+
+        private (SpatialPooler, KNeighborsClassifier<string, int[]>, List<int[]>) RunExperimentWithKNNClassifier(HtmConfig cfg, string inputPrefix)
         {
             var mem = new Connections(cfg);
             bool isInStableState = false;
 
-            int numColumns = 64 * 64;
+            int numColumns = 84 * 84;
             string trainingFolder = "Sample\\TestFiles";
-            string outputFolder = "Output";
-            Directory.CreateDirectory(outputFolder);
+            string outputFolder = Path.Combine("Output");
+            string sdrFolder = Path.Combine("SDRs");
 
-            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.png");
-            int imgSize = 28;
+            Directory.CreateDirectory(outputFolder);
+            Directory.CreateDirectory(sdrFolder);
+
+            var trainingImages = Directory.GetFiles(trainingFolder, $"{inputPrefix}*.jpg");
+            int imgSize = 52;
             string testName = "test_image";
+
+            Debug.WriteLine($"Initializing Training with {trainingImages.Length} images.");
 
             HomeostaticPlasticityController hpa = new HomeostaticPlasticityController(mem, trainingImages.Length * 50, (isStable, numPatterns, actColAvg, seenInputs) =>
             {
                 isInStableState = isStable;
-                Debug.WriteLine(isInStableState ? "Entered STABLE state." : "INSTABLE STATE.");
+                Debug.WriteLine(isInStableState ? "🚀 Entered STABLE state." : "⚠ INSTABLE STATE.");
             }, requiredSimilarityThreshold: 0.975);
 
             SpatialPooler sp = new SpatialPooler(hpa);
             sp.Init(mem, new DistributedMemory() { ColumnDictionary = new InMemoryDistributedDictionary<int, NeoCortexApi.Entities.Column>(1) });
 
             KNeighborsClassifier<string, int[]> knnClassifier = new KNeighborsClassifier<string, int[]>();
+            List<int[]> predictedSDRsList = new List<int[]>();
 
             int[] activeArray = new int[numColumns];
-            int maxCycles = 5;
+            int maxCycles = 50;
             int currentCycle = 0;
 
             while (!isInStableState && currentCycle < maxCycles)
             {
+                Debug.WriteLine($"\n🔄 Training Cycle {currentCycle + 1}/{maxCycles} 🔄");
+
                 foreach (var image in trainingImages)
                 {
-                    string inputBinaryImageFile = NeoCortexUtils.BinarizeImage($"{image}", imgSize, testName);
-                    int[] inputVector = NeoCortexUtils.ReadCsvIntegers(inputBinaryImageFile).ToArray();
+                    try
+                    {
+                        Debug.WriteLine($"🖼 Processing Image: {image}");
 
-                    sp.compute(inputVector, activeArray, true);
-                    var activeCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
+                        // Binarize Image
+                        string binarizedImageFile = BinarizeImageToFixedSize(image, imgSize);
+                        Debug.WriteLine($"📄 Binarized Image File: {binarizedImageFile}");
 
-                    var activeCells = activeCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-                    knnClassifier.Learn(image, activeCells);
+                        // Read Input Vector
+                        int[] inputVector = ReadBinaryTextFile(binarizedImageFile);
+                        Debug.WriteLine($"🔢 Input Vector Length: {inputVector.Length}");
 
-                    Debug.WriteLine($"Cycle: {currentCycle} - Image-Input: {image}");
+                        // Compute Active Columns
+                        sp.compute(inputVector, activeArray, true);
+                        var activeCols = ArrayUtils.IndexWhere(activeArray, el => el == 1);
+                        Debug.WriteLine($"📊 Active Columns Count: {activeCols.Length}");
+
+                        // Train KNN
+                        var activeCells = activeCols.Select(colIdx => new NeoCortexApi.Entities.Cell { Index = colIdx }).ToArray();
+                        knnClassifier.Learn(image, activeCells);
+                        Debug.WriteLine($"🧠 KNN Learning from {image}, Stored SDR: {string.Join(",", activeCols)}");
+
+                        // Store SDR
+                        predictedSDRsList.Add(activeCols);
+                        string sdrFilePath = Path.Combine(sdrFolder, $"{Path.GetFileNameWithoutExtension(image)}.csv");
+                        File.WriteAllText(sdrFilePath, string.Join(",", activeCols));
+                        Debug.WriteLine($"💾 Stored SDR for {image} at {sdrFilePath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"❌ Error processing {image}: {ex.Message}");
+                    }
                 }
 
                 currentCycle++;
-                if (currentCycle >= maxCycles)
-                    break;
+                Debug.WriteLine($"✅ Completed Cycle {currentCycle}.");
             }
 
-            string testImage = trainingImages[0];
-            string testBinaryImageFile = NeoCortexUtils.BinarizeImage($"{testImage}", imgSize, testName);
-            int[] testInputVector = NeoCortexUtils.ReadCsvIntegers(testBinaryImageFile).ToArray();
-
-            sp.compute(testInputVector, activeArray, false);
-            var testActiveCols = ArrayUtils.IndexWhere(activeArray, (el) => el == 1);
-            var testActiveCells = testActiveCols.Select(colIdx => new Cell { Index = colIdx }).ToArray();
-
-            var predictions = knnClassifier.GetPredictedInputValues(testActiveCells, 7);
-            foreach (var prediction in predictions)
+            if (!isInStableState)
             {
-                Debug.WriteLine($"Predicted label for {testImage}: {string.Join(", ", predictions.Select(p => p.PredictedInput))}");
+                Debug.WriteLine("⚠ Training completed, but stable state not reached.");
+            }
+            else
+            {
+                Debug.WriteLine("✅ Training completed successfully.");
             }
 
-            return (sp, knnClassifier);
+            return (sp, knnClassifier, predictedSDRsList);
         }
 
-        // Method to save normalized permanence values to files
-        private void SaveNormalizedPermanence(List<int[]> normalizedPermanence, string outputFolder)
+        private void RunRustructuringExperiment2(SpatialPooler sp, List<int[]> predictedSDRsList)
         {
-            // Ensure output directory exists
-            Directory.CreateDirectory(outputFolder);
+            List<int[]> normalizedPermanence = new List<int[]>();
 
-            // Generate a consistent timestamp for file naming
-            string timestamp = DateTime.Now.ToString("yyyyMMdd_HHmmssfff");
-
-            // Save each normalized permanence array to a separate file
-            for (int i = 0; i < normalizedPermanence.Count; i++)
+            foreach (var predictedSDR in predictedSDRsList)
             {
-                string filePath = Path.Combine(outputFolder, $"normalized_{timestamp}_{i}.txt");
+                Debug.WriteLine("Reconstructing permanence for SDR...");
 
-                using (var writer = new StreamWriter(filePath))
+                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
+
+                Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
+                foreach (var kvp in reconstructedPermanence)
                 {
-                    Enumerable.Range(0, 32)
-                              .Select(row => string.Join(" ", normalizedPermanence[i].Skip(row * 32).Take(32)))
-                              .ToList()
-                              .ForEach(writer.WriteLine);
+                    allPermanenceDictionary[kvp.Key] = kvp.Value;
                 }
 
-                Debug.WriteLine($"Saved: {filePath}");
+                int imgsize = 52 * 52;
+
+                for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
+                {
+                    if (!reconstructedPermanence.ContainsKey(inputIndex))
+                    {
+                        allPermanenceDictionary[inputIndex] = 0.0;
+                    }
+                }
+
+                var ThresholdValue = 67.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+
+                normalizedPermanence.Add(normalizePermanenceList.ToArray());
+
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
             }
         }
+
+        private int[] ReadBinaryTextFile(string filePath)
+        {
+            var lines = File.ReadAllLines(filePath);
+            return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
+        }
+
+        private string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        {
+            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+
+            using (Bitmap originalImage = new Bitmap(imagePath))
+            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
+            {
+                int[] binaryArray = new int[gridSize * gridSize];
+
+                for (int y = 0; y < gridSize; y++)
+                {
+                    for (int x = 0; x < gridSize; x++)
+                    {
+                        Color pixelColor = resizedImage.GetPixel(x, y);
+                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
+                    }
+                }
+
+                File.WriteAllLines(outputFile, binaryArray.Select((b, i) => (i % gridSize == 0 ? "\n" : "") + b));
+            }
+
+            return outputFile;
+        }
+    }
+}
