@@ -448,18 +448,7 @@ namespace NeoCortexApiSample
             foreach (var predictedSDR in predictedSDRsList)
             {
                 // Use the predicted SDR in the reconstruction process
-                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
-
-                int maxInput = predictedSDR.Length;
-
-                List<List<double>> heatmapData = new List<List<double>>();
-                // Initialize a list to get normalized permanence values.
-                List<int[]> BinarizedencodedInputs = new List<int[]>();
-                // List to store normalized permanence values
-                List<int[]> normalizedPermanence = new List<int[]>();
-                // List to store similarity values
-                List<double[]> similarityList = new List<double[]>();
-
+              
                 // Create a new dictionary to store extended probabilities
                 Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
                 // Iterate through all possible inputs using a foreach loop
