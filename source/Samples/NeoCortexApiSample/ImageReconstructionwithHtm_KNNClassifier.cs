@@ -461,15 +461,7 @@ namespace NeoCortexApiSample
                     allPermanenceDictionary[inputIndex] = probability;
                 }
 
-                //Assinginig the inactive columns Permanence 0
-                for (int inputIndex = 0; inputIndex < maxInput; inputIndex++)
-                {
-                    if (!reconstructedPermanence.ContainsKey(inputIndex))
-                    {
-                        // Key doesn't exist, set the probability to 0
-                        allPermanenceDictionary[inputIndex] = 0.0;
-                    }
-                }
+          
 
                 // Sort the dictionary by keys
                 var sortedAllPermanenceDictionary = allPermanenceDictionary.OrderBy(kvp => kvp.Key);
@@ -478,17 +470,17 @@ namespace NeoCortexApiSample
 
 
 
-                
+
 
                 ////Calculating Similarity with encoded Inputs and Reconstructed Inputs
-                //var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
+                var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
 
-                //double[] similarityArray = new double[] { similarity };
+                double[] similarityArray = new double[] { similarity };
 
-                ////Collecting Similarity Data for visualizing
-                //similarityList.Add(similarityArray);
-                //Debug.WriteLine($"Similarity: {similarity}");
-                SaveNormalizedPermanence(normalizedPermanence, "NormalizedPermanenceOutput");
+                //Collecting Similarity Data for visualizing
+                similarityList.Add(similarityArray);
+                Debug.WriteLine($"Similarity: {similarity}");
+               // SaveNormalizedPermanence(normalizedPermanence, "NormalizedPermanenceOutput");
 
             }
         }
