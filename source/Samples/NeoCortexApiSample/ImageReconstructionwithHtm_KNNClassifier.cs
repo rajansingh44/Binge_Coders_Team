@@ -232,6 +232,97 @@ namespace NeoCortexApiSample
                 Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
             }
         }
+        private void RunRustructuringExperimentHtm(SpatialPooler sp, List<int[]> predictedSDRsList)
+        {
+            List<int[]> normalizedPermanence = new List<int[]>();
+            List<double[]> similarityList = new List<double[]>();
+
+
+            foreach (var predictedSDR in predictedSDRsList)
+            {
+                Debug.WriteLine("Reconstructing permanence for SDR...");
+
+                // Reconstruct the permanence for the predicted SDR
+                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
+                Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
+
+                foreach (var kvp in reconstructedPermanence)
+                {
+                    allPermanenceDictionary[kvp.Key] = kvp.Value;
+                }
+
+                int imgsize = 52 * 52;
+
+                // Assign inactive columns permanence 0
+                for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
+                {
+                    if (!reconstructedPermanence.ContainsKey(inputIndex))
+                    {
+                        allPermanenceDictionary[inputIndex] = 0.0;
+                    }
+                }
+
+                // Normalize permanence values
+                var ThresholdValue = 70.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+                normalizedPermanence.Add(normalizePermanenceList.ToArray());
+
+                // Save the reconstructed binary image
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
+
+                int[] inputVector = normalizePermanenceList.ToArray();
+
+
+                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
+                var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
+
+                double[] similarityArray = new double[] { similarity };
+
+                //Collecting Similarity Data for visualizing
+                similarityList.Add(similarityArray);
+            }
+            // Generate the Similarity graph using the Similarity list
+            DrawSimilarityPlots(similarityList);
+        }
+        public static void DrawSimilarityPlots(List<double[]> similaritiesList)
+        {
+            // Combine all similarities from the list of arrays
+
+            List<double> combinedSimilarities = new List<double>();
+            foreach (var similarities in similaritiesList)
+
+            {
+                combinedSimilarities.AddRange(similarities);
+            }
+
+            // Define the folder path based on the current directory
+
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
+
+
+            // Create the folder if it doesn't exist
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            // Define the file name
+            string fileName = "combined_similarity_plot_Image_Inputs.png";
+
+            // Define the file path with the folder path and file name
+
+            string filePath = Path.Combine(folderPath, fileName);
+
+            // Draw the combined similarity plot
+            NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
+
+            Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
+
+        }
 
         private int[] ReadBinaryTextFile(string filePath)
         {
