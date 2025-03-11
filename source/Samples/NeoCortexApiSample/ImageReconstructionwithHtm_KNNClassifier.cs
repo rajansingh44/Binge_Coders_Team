@@ -332,24 +332,24 @@ namespace NeoCortexApiSample
             {
                 Debug.WriteLine($"Predicted Label: {prediction.PredictedInput}");
                 if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
-                    //    {
-                    //        Debug.WriteLine($"Predicted SDR: {string.Join(", ", prediction.PredictedSDRs)}");
-                    //    }
-                    //    else
-                    //    {
-                    //        Debug.WriteLine("No SDRs found for this prediction.");
-                    //    }
-                    //    var predictedSDRsList = new List<int[]>();
-                    //    foreach (var prediction in predictions)
-                    //        if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
-                    //        {
-                    //            predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
-                    //        }
-                    //    // Pass the predicted SDRs to the restructuring function
-                    //    RunRustructuringExperiment2(sp, predictedSDRsList);
+                {
+                    Debug.WriteLine($"Predicted SDR: {string.Join(", ", prediction.PredictedSDRs)}");
+                }
+                else
+                {
+                    Debug.WriteLine("No SDRs found for this prediction.");
+                }
+                //    var predictedSDRsList = new List<int[]>();
+                //    foreach (var prediction in predictions)
+                //        if (prediction.PredictedSDRs != null && prediction.PredictedSDRs.Count > 0)
+                //        {
+                //            predictedSDRsList.Add(prediction.PredictedSDRs.ToArray());
+                //        }
+                //    // Pass the predicted SDRs to the restructuring function
+                //    RunRustructuringExperiment2(sp, predictedSDRsList);
 
-                    //    return (sp, knnClassifier);
-                    foreach (var result in results)
+                //    return (sp, knnClassifier);
+                foreach (var result in results)
             {
                 Debug.WriteLine($"Output Label: {result.OutputLabel}");
 
