@@ -636,5 +636,23 @@ namespace NeoCortexApi
             return resultList;
         }
 
+        public static List<int> ThresholdingforResetImg(IEnumerable<double> values, double threshold)
+        {
+            if (values == null)
+            {
+                return null;
+            }
+
+            List<int> resultList = new List<int>();
+
+            foreach (var numericValue in values)
+            {
+                int thresholdedValue = (numericValue > threshold) ? 1 : 0; // Changed '>=' to '>'
+                resultList.Add(thresholdedValue);
+            }
+
+            return resultList;
+        }
+
     }
 }

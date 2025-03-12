@@ -32,8 +32,26 @@ namespace NeoCortexApiSample
         /// <param name="args"></param>
         static void Main(string[] args)
         {
+            //
+            // Starts experiment that demonstrates how to learn spatial patterns.
+            //SpatialPatternLearning experiment = new SpatialPatternLearning();
+            //experiment.Run();
+
             ImageReconstructionwithHtm_KNNClassifier exp = new ImageReconstructionwithHtm_KNNClassifier();
             exp.Run();
+
+            // Starts experiment that demonstrates how to learn spatial patterns
+            //ImageBinarizerSpatialPattern exp = new ImageBinarizerSpatialPattern();
+            //exp.Run();
+
+            // Starts experiment that demonstrates how to learn spatial patterns.
+            // SequenceLearning experiment = new SequenceLearning();
+            //experiment.Run();
+
+            // This method is developed by Team_MSL to read arbitrary data from single txt file and improve CPU utilization*/
+            //   RunPredictionMultiSequenceExperiment();
+
+
         }
     }
 }
