@@ -349,36 +349,11 @@ namespace NeoCortexApiSample
                 RunRustructuringExperiment2(sp, predictedSDRsList);
 
                 //    return (sp, knnClassifier);
-                foreach (var result in results)
-            {
-                Debug.WriteLine($"Output Label: {result.OutputLabel}");
-
-                if (result.OutputData != null && result.OutputData.Count > 0)
-                {
-                    Debug.WriteLine($"Output Data: {string.Join(", ", result.OutputData)}");
-                }
-                else
-                {
-                    Debug.WriteLine("No data available for this output.");
-                }
-
-                var outputDataList = new List<int[]>();
-
-                foreach (var res in results)
-                {
-                    if (res.OutputData != null && res.OutputData.Count > 0)
-                    {
-                        outputDataList.Add(res.OutputData.ToArray());
-                    }
-                }
-
-                // Process the output data with the restructuring function
-                ExecuteRestructuringProcess(processor, outputDataList);
-
-                return (processor, classifier);
+                return (sp, knnClassifier);
             }
+
 
         }
-            }
+
     }
 }
