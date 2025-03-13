@@ -129,7 +129,7 @@ namespace NeoCortexApiSample
                         // Train KNN
                         var activeCells = activeCols.Select(colIdx => new NeoCortexApi.Entities.Cell { Index = colIdx }).ToArray();
                         knnClassifier.Learn(image, activeCells);
-                        //Debug.WriteLine($" KNN Learning from {image}, Stored SDR: {string.Join(",", activeCells.Select(cell => cell.Index.ToString()))}");
+ 
 
                         Debug.WriteLine($" KNN Learning from {image}, Stored SDR: {string.Join(",", activeCols)}");
 
@@ -311,7 +311,78 @@ namespace NeoCortexApiSample
 
 
 
-       
+        public void RunRustructuringExperimentHtm(SpatialPooler sp, List<int[]> predictedSDRsList)
+        {
+            List<int[]> normalizedPermanence_a = new List<int[]>();
+            List<double[]> similarityList = new List<double[]>();
+            List<string> jaccardResults = new List<string>();
+
+
+            foreach (var predictedSDR in predictedSDRsList)
+            {
+                Debug.WriteLine("Reconstructing permanence for SDR...");
+
+                // Reconstruct the permanence for the predicted SDR
+                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
+                Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
+
+                foreach (var kvp in reconstructedPermanence)
+                {
+                    allPermanenceDictionary[kvp.Key] = kvp.Value;
+                }
+
+                int imgsize = 52 * 52;
+
+                // Assign inactive columns permanence 0
+                for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
+                {
+                    if (!reconstructedPermanence.ContainsKey(inputIndex))
+                    {
+                        allPermanenceDictionary[inputIndex] = 0.0;
+                    }
+                }
+
+                // Normalize permanence values
+                var ThresholdValue = 70.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+                normalizedPermanence_a.Add(normalizePermanenceList.ToArray());
+
+                // Save the reconstructed binary image
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
+
+                //print the SDR and Permanance Values
+                double jaccardSimilarity = JaccardSimilarity(predictedSDR, normalizePermanenceList.ToArray());
+                double similarityPercentage = jaccardSimilarity * 100;
+                jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
+                Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
+
+                int[] inputVector = normalizePermanenceList.ToArray();
+
+                //For Graph plotting, initializing variables
+                int[] sortedPredictedSDR = predictedSDR.OrderByDescending(x => x).ToArray();
+                int[] sortedNormalizePermanenceList = normalizePermanenceList.ToArray().OrderByDescending(x => x).ToArray();
+
+                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
+                var similarity = similarityPercentage;
+
+
+
+                double[] similarityArray = new double[] { similarity };
+
+                //Collecting Similarity Data for visualizing
+                similarityList.Add(similarityArray);
+            }
+            // Generate the Similarity graph using the Similarity list
+            DrawSimilarityPlots(similarityList);
+            // Save Jaccard Similarity results to CSV
+            string jaccardDir = "JaccardSimilarityResults";
+            Directory.CreateDirectory(jaccardDir);
+            File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
+            CreateCombinedSimilarityCSV();
+        }
 
         private double JaccardSimilarity(int[] vec1, int[] vec2)
         {
@@ -327,110 +398,6 @@ namespace NeoCortexApiSample
             return magnitude1 == 0 || magnitude2 == 0 ? 0 : dotProduct / (Math.Sqrt(magnitude1) * Math.Sqrt(magnitude2));
         }
 
-        private void CreateCombinedSimilarityCSV()
-        {
-            string knnFilePath = Path.Combine("KNN_Similarity_Results", "Similarity_KNN.csv");
-            string htmFilePath = Path.Combine("JaccardSimilarityResults", "Similarity_HTM.csv");
-            string combinedFilePath = Path.Combine("CombinedSimilarityResults", "Similarity_Combined.csv");
-
-            Directory.CreateDirectory("CombinedSimilarityResults");
-
-            List<string> knnLines = File.Exists(knnFilePath) ? File.ReadAllLines(knnFilePath).ToList() : new List<string>();
-            List<string> htmLines = File.Exists(htmFilePath) ? File.ReadAllLines(htmFilePath).ToList() : new List<string>();
-
-            List<string> combinedResults = new List<string> { "Image, KNN Similarity (%), HTM Similarity (%)" };
-
-            int maxLines = Math.Max(knnLines.Count, htmLines.Count);
-
-            for (int i = 0; i < maxLines; i++)
-            {
-                string knnEntry = i < knnLines.Count ? knnLines[i] : "N/A, N/A";
-                string htmEntry = i < htmLines.Count ? htmLines[i].Split(',')[1] : "N/A";
-
-                string imageName = knnEntry.Split(',')[0];
-                string knnSimilarity = knnEntry.Split(',').Length > 1 ? knnEntry.Split(',')[1] : "N/A";
-
-                combinedResults.Add($"{imageName}, {knnSimilarity}, {htmEntry}");
-            }
-
-            File.WriteAllLines(combinedFilePath, combinedResults);
-            Debug.WriteLine("Combined similarity CSV generated successfully.");
-        }
-
-        public static void DrawSimilarityPlots(List<double[]> similaritiesList)
-        {
-            // Combine all similarities from the list of arrays
-
-            List<double> combinedSimilarities = new List<double>();
-            foreach (var similarities in similaritiesList)
-
-            {
-                combinedSimilarities.AddRange(similarities);
-            }
-
-            // Define the folder path based on the current directory
-
-            string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
-
-
-            // Create the folder if it doesn't exist
-
-            if (!Directory.Exists(folderPath))
-            {
-                Directory.CreateDirectory(folderPath);
-            }
-
-            // Define the file name
-            string fileName = "combined_similarity_plot_Image_Inputs.png";
-
-            // Define the file path with the folder path and file name
-
-            string filePath = Path.Combine(folderPath, fileName);
-
-            // Draw the combined similarity plot
-            NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
-
-            Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
-
-        }
-
-
-
-        private int[] ReadBinaryTextFile(string filePath)
-        {
-            var lines = File.ReadAllLines(filePath);
-            return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
-        }
-
-        private string BinarizeImageToFixedSize(string imagePath, int gridSize)
-        {
-            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
-
-            using (Bitmap originalImage = new Bitmap(imagePath))
-            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
-            {
-                int[] binaryArray = new int[gridSize * gridSize];
-
-                for (int y = 0; y < gridSize; y++)
-                {
-                    for (int x = 0; x < gridSize; x++)
-                    {
-                        Color pixelColor = resizedImage.GetPixel(x, y);
-                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
-                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
-                    }
-                }
-
-                using (StreamWriter writer = new StreamWriter(outputFile))
-                {
-                    for (int i = 0; i < gridSize; i++)
-                    {
-                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
-                    }
-                }
-            }
-
-            return outputFile;
-        }
+       
     }
 }
