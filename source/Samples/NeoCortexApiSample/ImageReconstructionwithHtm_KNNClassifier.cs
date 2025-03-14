@@ -12,27 +12,20 @@ using System.Text;
 
 namespace NeoCortexApiSample
 {
-    internal class ImageBinarizerSpatialPattern
+    internal class ImageReconstructionwithHtm_KNNClassifier
     {
         public string inputPrefix { get; private set; }
 
-        /// <summary>
-        /// Implements an experiment that demonstrates how to learn spatial patterns.
-        /// SP will learn every presented Image input in multiple iterations.
-        /// </summary>
         public void Run()
         {
-            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageBinarizerSpatialPattern)}");
+            Console.WriteLine($"Hello NeocortexApi! Experiment {nameof(ImageReconstructionwithHtm_KNNClassifier)}");
 
             double minOctOverlapCycles = 1.0;
             double maxBoost = 5.0;
-            // We will build a slice of the cortex with the given number of mini-columns
-            int numColumns = 64 * 64;
-            // The Size of the Image Height and width is 28 pixel
-            int imageSize = 28;
-            var colDims = new int[] { 64, 64 };
+            int numColumns = 84 * 84;
+            int imageSize = 52;
+            var colDims = new int[] { 84, 84 };
 
-            // This is a set of configuration parameters used in the experiment.
             HtmConfig cfg = new HtmConfig(new int[] { imageSize, imageSize }, new int[] { numColumns })
             {
                 CellsPerColumn = 10,
