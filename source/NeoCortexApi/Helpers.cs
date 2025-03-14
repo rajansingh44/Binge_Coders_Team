@@ -44,7 +44,7 @@ namespace NeoCortexApi
                 rnd = new Random();
 
             if (activeBits <= 0)
-                activeBits = numOfBits/2;
+                activeBits = numOfBits / 2;
 
 
             int[] vector = new int[numOfBits];
@@ -59,7 +59,7 @@ namespace NeoCortexApi
                         vector[index] = 1;
                         break;
                     }
-                }                
+                }
             }
 
             return vector;
@@ -73,7 +73,7 @@ namespace NeoCortexApi
         /// <see cref=""/>
         /// <param name="sdrs">the SDR sets</param>
         /// <returns>string of traced output SDRs</returns>
-        public static string StringifySdr(List<int[]> sdrs, string separator = " | " )
+        public static string StringifySdr(List<int[]> sdrs, string separator = " | ")
         {
             //List of string of arrays for SDR set
             var heads = new List<int>(new int[sdrs.Count]);
@@ -552,7 +552,7 @@ namespace NeoCortexApi
         /// <param name="population"></param>
         /// <returns>Cpnnetced cells from the population.</returns>
         public static List<Cell> GetDistalConnectedCells(Cell cell, IList<Cell> population)
-        {          
+        {
             List<Cell> connectedCells = new List<Cell>();
 
             var populationSynapses = population.SelectMany(c => c.DistalDendrites.SelectMany(s => s.Synapses)).ToList();
@@ -630,6 +630,24 @@ namespace NeoCortexApi
             {
                 int thresholdedValue = (numericValue >= threshold) ? 1 : 0;
 
+                resultList.Add(thresholdedValue);
+            }
+
+            return resultList;
+        }
+
+        public static List<int> ThresholdingforResetImg(IEnumerable<double> values, double threshold)
+        {
+            if (values == null)
+            {
+                return null;
+            }
+
+            List<int> resultList = new List<int>();
+
+            foreach (var numericValue in values)
+            {
+                int thresholdedValue = (numericValue > threshold) ? 1 : 0; // Changed '>=' to '>'
                 resultList.Add(thresholdedValue);
             }
 
