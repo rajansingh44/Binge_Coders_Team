@@ -17,6 +17,8 @@ namespace NeoCortexApi.Classifiers
     /// </summary>
     public class ClassifierResult<TIN>
     {
+        internal string PredictedLabel;
+
         /// <summary>
         /// The predicted input value.
         /// </summary>
@@ -31,6 +33,7 @@ namespace NeoCortexApi.Classifiers
         /// The similarity between the SDR of  predicted cell set with the SDR of the input.
         /// </summary>
         public double Similarity { get; set; }
+        public List<int> PredictedSDRs { get; internal set; }
     }
 
 
