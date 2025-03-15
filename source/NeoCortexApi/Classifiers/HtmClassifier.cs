@@ -99,7 +99,7 @@ namespace NeoCortexApi.Classifiers
                     bestSdr = sdr;
                 }
             }
-            
+
             similarity = Math.Round(MathHelpers.CalcArraySimilarity(bestSdr, cellIndicies), 2);
 
             return maxSameBits;
@@ -419,7 +419,7 @@ namespace NeoCortexApi.Classifiers
                 StreamWriter sw = null;
 
                 if (fileName != null)
-                    sw = new StreamWriter(fileName.Replace(".csv", $"_Digit_{item}.csv"));
+                    sw = new StreamWriter(fileName.Replace(".csv", $"Digit{item}.csv"));
 
                 Debug.WriteLine("");
                 Debug.WriteLine($"{item}");
@@ -547,7 +547,7 @@ namespace NeoCortexApi.Classifiers
         /// <returns></returns>
         public double[,] TraceAutoSimilarity(TIN label, bool visualize = false)
         {
-            return TraceCrossSimilarity(label,label, visualize);
+            return TraceCrossSimilarity(label, label, visualize);
         }
 
         /// <summary>
@@ -563,11 +563,11 @@ namespace NeoCortexApi.Classifiers
             double minVal = 1000;
             double sum = 0;
             double count = 0;
-            for (int i = 0; i < correlationMat2D.GetLength(0);i+=1)
+            for (int i = 0; i < correlationMat2D.GetLength(0); i += 1)
             {
-                for(int j = 0; j < correlationMat2D.GetLength(1); j++)
+                for (int j = 0; j < correlationMat2D.GetLength(1); j++)
                 {
-                    if(correlationMat2D[i,j] > maxVal)
+                    if (correlationMat2D[i, j] > maxVal)
                     {
                         maxVal = correlationMat2D[i, j];
                     }
@@ -575,14 +575,14 @@ namespace NeoCortexApi.Classifiers
                     {
                         minVal = correlationMat2D[i, j];
                     }
-                    sum+=correlationMat2D[i,j];
+                    sum += correlationMat2D[i, j];
                     count++;
                 }
             }
 
-            res.Add("Max", Math.Round(maxVal,4));
-            res.Add("Min", Math.Round(minVal,4));
-            res.Add("Average", Math.Round(sum / count,4));
+            res.Add("Max", Math.Round(maxVal, 4));
+            res.Add("Min", Math.Round(minVal, 4));
+            res.Add("Average", Math.Round(sum / count, 4));
 
             return res;
         }
@@ -621,7 +621,7 @@ namespace NeoCortexApi.Classifiers
         /// <returns></returns>
         public Dictionary<(TIN, TIN), Dictionary<string, double>> TraceCorrelation(List<TIN> labels)
         {
-            return TraceCorrelation(labels,labels);
+            return TraceCorrelation(labels, labels);
         }
 
         /// <summary>
@@ -682,7 +682,7 @@ namespace NeoCortexApi.Classifiers
         /// <returns></returns>
         public List<string> RenderCorrelationMatrixToCSVFormat(List<TIN> labels)
         {
-            return RenderCorrelationMatrixToCSVFormat(labels,labels);
+            return RenderCorrelationMatrixToCSVFormat(labels, labels);
         }
 
         /// <summary>
@@ -698,8 +698,8 @@ namespace NeoCortexApi.Classifiers
             int offsetIndex = 0; // this is for printting a line after the first header line
             int cellLength = 19;
             string dashLine = "";
-            int lineLength = (cellLength+1) * tableData[0].Split(";").Length + 1;
-            for (int i = 0; i < lineLength;i+=1)
+            int lineLength = (cellLength + 1) * tableData[0].Split(";").Length + 1;
+            for (int i = 0; i < lineLength; i += 1)
             {
                 dashLine += "-";
             }
@@ -710,7 +710,7 @@ namespace NeoCortexApi.Classifiers
                 allEntries.Add(oneLine);
                 Debug.Write("| ");
                 foreach (var cell in oneLine)
-                { 
+                {
                     Debug.Write(string.Format("{0," + -cellLength + "}|", cell));
                 }
                 Debug.Write("\n");

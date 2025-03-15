@@ -9,6 +9,7 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace NeoCortex
 {
@@ -20,25 +21,87 @@ namespace NeoCortex
         /// <summary>
         /// Binarize image to the file with the test name.
         /// </summary>
-        /// <param name="mnistImage"></param>
-        /// <param name="imageSize"></param>
-        /// <param name="testName"></param>
-        /// <returns></returns>
+        /// <param name = "mnistImage" ></ param >
+        /// < param name= "imageSize" ></ param >
+        /// < param name= "testName" ></ param >
+        /// < returns ></ returns >
         public static string BinarizeImage(string mnistImage, int imageSize, string testName)
         {
-            string binaryImage;
+            string binaryImage = $"{Path.GetFileNameWithoutExtension(mnistImage)}_binarized.txt"; // Unique name
 
-            binaryImage = $"{testName}.txt";
+            string binaryImagePath = Path.Combine("Output", binaryImage); // Save in Output folder
 
-            if (File.Exists(binaryImage))
-                File.Delete(binaryImage);
+            if (File.Exists(binaryImagePath))
+                File.Delete(binaryImagePath);
 
-            ImageBinarizer imageBinarizer = new ImageBinarizer(new BinarizerParams { RedThreshold = 200, GreenThreshold = 200, BlueThreshold = 200, ImageWidth = imageSize, ImageHeight = imageSize, InputImagePath = mnistImage, OutputImagePath = binaryImage });
+            ImageBinarizer imageBinarizer = new ImageBinarizer(new BinarizerParams
+            {
+                RedThreshold = 200,
+                GreenThreshold = 200,
+                BlueThreshold = 200,
+                ImageWidth = imageSize,
+                ImageHeight = imageSize,
+                InputImagePath = mnistImage,
+                OutputImagePath = binaryImagePath
+            });
 
             imageBinarizer.Run();
 
-            return binaryImage;
+            // *Debug: Print the binarized file contents*
+            Console.WriteLine($"Binarized File: {binaryImagePath}");
+            Console.WriteLine(File.ReadAllText(binaryImagePath)); // Check if content is unique
+
+            return binaryImagePath;  // Return full path
         }
+
+        //public static string BinarizeImage(string mnistImage, int imageSize, string testName)
+        //{
+        //    string binaryImage;
+
+        //    binaryImage = $"{testName}.txt";
+
+        //    if (File.Exists(binaryImage))
+        //        File.Delete(binaryImage);
+
+        //    ImageBinarizer imageBinarizer = new ImageBinarizer(new BinarizerParams { RedThreshold = 200, GreenThreshold = 200, BlueThreshold = 200, ImageWidth = imageSize, ImageHeight = imageSize, InputImagePath = mnistImage, OutputImagePath = binaryImage });
+
+        //    imageBinarizer.Run();
+
+        //    return binaryImage;
+        //}
+        //public static string BinarizeImage(string mnistImage, int imageSize, string testName)
+        //{
+        //    string outputFolder = Path.Combine(Directory.GetCurrentDirectory(), "Output");
+
+        //    // Ensure the output folder exists
+        //    if (!Directory.Exists(outputFolder))
+        //    {
+        //        Directory.CreateDirectory(outputFolder);
+        //    }
+
+        //    // Change the binary image filename to be saved in the Output folder
+        //    string binaryImage = Path.Combine(outputFolder, $"{testName}.txt");
+
+        //    // Delete the file if it already exists
+        //    if (File.Exists(binaryImage))
+        //        File.Delete(binaryImage);
+
+        //    ImageBinarizer imageBinarizer = new ImageBinarizer(new BinarizerParams
+        //    {
+        //        RedThreshold = 200,
+        //        GreenThreshold = 200,
+        //        BlueThreshold = 200,
+        //        ImageWidth = imageSize,
+        //        ImageHeight = imageSize,
+        //        InputImagePath = mnistImage,
+        //        OutputImagePath = binaryImage
+        //    });
+
+        //    // Run the binarization process
+        //    imageBinarizer.Run();
+
+        //    return binaryImage;
+        //}
 
         /// <summary>
         /// Draws the bitmap from array of active columns.
@@ -127,6 +190,121 @@ namespace NeoCortex
 
             myBitmap.Save(filePath, ImageFormat.Png);
         }
+
+        //Comments for Image as Binary
+
+
+        public static void SaveBinarizedImageWithText(int[] inputVector, string imageName)
+        {
+            int width = 52, height = 52;
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "BinaryImages");
+
+            // Ensure the folder exists
+            Directory.CreateDirectory(folderPath);
+
+            string filename = Path.Combine(folderPath, $"{imageName}.Png");
+
+            using (Bitmap bmp = new Bitmap(width * 10, height * 10)) // Scale up for better visibility
+            using (Graphics g = Graphics.FromImage(bmp))
+            {
+                g.Clear(Color.White); // Set background to white
+
+                using (Font font = new Font("Arial", 10, FontStyle.Bold)) // Adjust font size
+                using (Brush brush = new SolidBrush(Color.Black))
+                {
+                    for (int y = 0; y < height; y++)
+                    {
+                        for (int x = 0; x < width; x++)
+                        {
+                            int pixelIndex = y * width + x;
+                            string text = inputVector[pixelIndex].ToString(); // "0" or "1"
+                            g.DrawString(text, font, brush, x * 10, y * 10); // Position based on scale
+                        }
+                    }
+                }
+                bmp.Save(filename, ImageFormat.Png);
+                //bmp.Save(filename);
+            }
+        }
+
+        public static void SaveBinarizedImageFromBinaryArray(int[] inputVector, string imageName, int width = 52, int height = 52, int rescalingFactor = 30)
+        {
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "GeneratedImages");
+
+            // Ensure the folder exists
+            Directory.CreateDirectory(folderPath);
+
+            string filename = Path.Combine(folderPath, $"{imageName}.txt");
+
+            // Create a StringBuilder to hold the output content
+            StringBuilder sb = new StringBuilder();
+
+            // Write the input vector data into the StringBuilder in a grid format
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int pixelIndex = y * width + x;
+                    sb.Append(inputVector[pixelIndex].ToString());
+
+                    // Add a space between the binary values
+                    if (x < width - 1)
+                    {
+                        sb.Append(" ");
+                    }
+                }
+
+                // Add a new line after each row
+                sb.AppendLine();
+            }
+
+            // Save the StringBuilder content to a text file
+            File.WriteAllText(filename, sb.ToString());
+
+            Console.WriteLine($"Text file saved to: {filename}");
+        }
+        // Save the reconstructed Image for Htm in seperate Folder
+        public static void SaveBinarizedImageFromBinaryArray_HTM(int[] inputVector, string imageName, int width = 52, int height = 52, int rescalingFactor = 30)
+        {
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "GeneratedImages_HTM");
+
+            // Ensure the folder exists
+            Directory.CreateDirectory(folderPath);
+
+            string filename = Path.Combine(folderPath, $"{imageName}.txt");
+
+            // Create a StringBuilder to hold the output content
+            StringBuilder sb = new StringBuilder();
+
+            // Write the input vector data into the StringBuilder in a grid format
+            for (int y = 0; y < height; y++)
+            {
+                for (int x = 0; x < width; x++)
+                {
+                    int pixelIndex = y * width + x;
+                    sb.Append(inputVector[pixelIndex].ToString());
+
+                    // Add a space between the binary values
+                    if (x < width - 1)
+                    {
+                        sb.Append(" ");
+                    }
+                }
+
+                // Add a new line after each row
+                sb.AppendLine();
+            }
+
+            // Save the StringBuilder content to a text file
+            File.WriteAllText(filename, sb.ToString());
+
+            Console.WriteLine($"Text file saved to: {filename}");
+        }
+
+
+
+
+
 
         /// <summary>
         /// TODO: add comment
