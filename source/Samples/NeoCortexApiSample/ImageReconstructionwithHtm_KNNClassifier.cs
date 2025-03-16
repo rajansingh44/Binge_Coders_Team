@@ -315,8 +315,7 @@ namespace NeoCortexApiSample
         {
             List<int[]> normalizedPermanence_a = new List<int[]>();
             List<double[]> similarityList = new List<double[]>();
-            List<string> jaccardResults = new List<string>();
-
+            List<string> adjcosineresults = new List<string>();
 
             foreach (var predictedSDR in predictedSDRsList)
             {
@@ -354,37 +353,21 @@ namespace NeoCortexApiSample
                 Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
 
                 //print the SDR and Permanance Values
-                double jaccardSimilarity = JaccardSimilarity(predictedSDR, normalizePermanenceList.ToArray());
-                double similarityPercentage = jaccardSimilarity * 100;
-                jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
+                double adjHTM_similarity = AdjustedCosineSimilarity(predictedSDR, normalizePermanenceList.ToArray());
+                double similarityPercentage = adjHTM_similarity * 100;
+                adjcosineresults.Add($"{outputPath},{similarityPercentage:F2}");
                 Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
 
-                int[] inputVector = normalizePermanenceList.ToArray();
-
-                //For Graph plotting, initializing variables
-                int[] sortedPredictedSDR = predictedSDR.OrderByDescending(x => x).ToArray();
-                int[] sortedNormalizePermanenceList = normalizePermanenceList.ToArray().OrderByDescending(x => x).ToArray();
-
-                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
-                var similarity = similarityPercentage;
-
-
-
-                double[] similarityArray = new double[] { similarity };
-
-                //Collecting Similarity Data for visualizing
-                similarityList.Add(similarityArray);
+                
             }
-            // Generate the Similarity graph using the Similarity list
-            DrawSimilarityPlots(similarityList);
             // Save Jaccard Similarity results to CSV
-            string jaccardDir = "JaccardSimilarityResults";
-            Directory.CreateDirectory(jaccardDir);
-            File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
+            string AdjHTM_Results = "HTM_Similarity";
+            Directory.CreateDirectory(AdjHTM_Results);
+            File.WriteAllLines(Path.Combine(AdjHTM_Results, "Similarity_HTM.csv"), adjcosineresults);
             CreateCombinedSimilarityCSV();
         }
 
-        private double JaccardSimilarity(int[] vec1, int[] vec2)
+        private double AdjustedCosineSimilarity(int[] vec1, int[] vec2)
         {
             double dotProduct = 0, magnitude1 = 0, magnitude2 = 0;
 
@@ -398,6 +381,82 @@ namespace NeoCortexApiSample
             return magnitude1 == 0 || magnitude2 == 0 ? 0 : dotProduct / (Math.Sqrt(magnitude1) * Math.Sqrt(magnitude2));
         }
 
-       
+        
+
+        public static void DrawSimilarityPlots(List<double[]> similaritiesList)
+        {
+            // Combine all similarities from the list of arrays
+
+            List<double> combinedSimilarities = new List<double>();
+            foreach (var similarities in similaritiesList)
+
+            {
+                combinedSimilarities.AddRange(similarities);
+            }
+
+            // Define the folder path based on the current directory
+
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
+
+
+            // Create the folder if it doesn't exist
+
+            if (!Directory.Exists(folderPath))
+            {
+                Directory.CreateDirectory(folderPath);
+            }
+
+            // Define the file name
+            string fileName = "combined_similarity_plot_Image_Inputs.png";
+
+            // Define the file path with the folder path and file name
+
+            string filePath = Path.Combine(folderPath, fileName);
+
+            // Draw the combined similarity plot
+            NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
+
+            Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
+
+        }
+
+
+
+        private int[] ReadBinaryTextFile(string filePath)
+        {
+            var lines = File.ReadAllLines(filePath);
+            return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
+        }
+
+        private string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        {
+            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+
+            using (Bitmap originalImage = new Bitmap(imagePath))
+            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
+            {
+                int[] binaryArray = new int[gridSize * gridSize];
+
+                for (int y = 0; y < gridSize; y++)
+                {
+                    for (int x = 0; x < gridSize; x++)
+                    {
+                        Color pixelColor = resizedImage.GetPixel(x, y);
+                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
+                    }
+                }
+
+                using (StreamWriter writer = new StreamWriter(outputFile))
+                {
+                    for (int i = 0; i < gridSize; i++)
+                    {
+                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
+                    }
+                }
+            }
+
+            return outputFile;
+        }
     }
 }
