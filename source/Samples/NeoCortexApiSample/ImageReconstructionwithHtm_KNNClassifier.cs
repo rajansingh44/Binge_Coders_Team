@@ -344,5 +344,43 @@ namespace NeoCortexApiSample
                     }
                 }
 
+                // Normalize permanence values
+                var ThresholdValue = 70.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+                normalizedPermanence.Add(normalizePermanenceList.ToArray());
+
+                // Save the reconstructed binary image
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
+
+                //print the SDR and Permanance Values
+                double jaccardSimilarity = JaccardSimilarity(predictedSDR, normalizePermanenceList.ToArray());
+                double similarityPercentage = jaccardSimilarity * 100;
+                jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
+                Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
+
+                int[] inputVector = normalizePermanenceList.ToArray();
+
+
+                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
+                var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
+
+
+
+                double[] similarityArray = new double[] { similarity };
+
+                //Collecting Similarity Data for visualizing
+                similarityList.Add(similarityArray);
+            }
+            // Generate the Similarity graph using the Similarity list
+            DrawSimilarityPlots(similarityList);
+            // Save Jaccard Similarity results to CSV
+            string jaccardDir = "JaccardSimilarityResults";
+            Directory.CreateDirectory(jaccardDir);
+            File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
+            CreateCombinedSimilarityCSV();
+        }
     }
 }
