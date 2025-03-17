@@ -229,7 +229,7 @@ namespace NeoCortex
 
         public static void SaveBinarizedImageFromBinaryArray(int[] inputVector, string imageName, int width = 52, int height = 52, int rescalingFactor = 30)
         {
-            string folderPath = Path.Combine(Environment.CurrentDirectory, "GeneratedImages");
+            string folderPath = Path.Combine(Environment.CurrentDirectory, "GeneratedImages_KNN");
 
             // Ensure the folder exists
             Directory.CreateDirectory(folderPath);

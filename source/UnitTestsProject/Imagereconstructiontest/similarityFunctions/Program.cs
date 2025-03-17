@@ -4,7 +4,8 @@
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("The test case is to check the cosine similarity is able to compare the vectors");
+            Console.WriteLine("Hello,people! The following program test the Functions which are used in Image Reconstruction");
+
         }
     }
 }
