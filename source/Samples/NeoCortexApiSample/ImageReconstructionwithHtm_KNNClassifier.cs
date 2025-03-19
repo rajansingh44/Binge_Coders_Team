@@ -382,5 +382,18 @@ namespace NeoCortexApiSample
             File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
             CreateCombinedSimilarityCSV();
         }
+        private double JaccardSimilarity(int[] vec1, int[] vec2)
+        {
+            double dotProduct = 0, magnitude1 = 0, magnitude2 = 0;
+
+            for (int i = 0; i < vec1.Length; i++)
+            {
+                dotProduct += vec1[i] * vec2[i];
+                magnitude1 += vec1[i] * vec1[i];
+                magnitude2 += vec2[i] * vec2[i];
+            }
+
+            return magnitude1 == 0 || magnitude2 == 0 ? 0 : dotProduct / (Math.Sqrt(magnitude1) * Math.Sqrt(magnitude2));
+        }
     }
 }
