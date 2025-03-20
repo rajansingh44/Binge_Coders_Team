@@ -1,67 +1,430 @@
-[![license](https://img.shields.io/github/license/mashape/apistatus.svg?maxAge=2592000)](https://github.com/ddobric/htmdotnet/blob/master/LICENSE)
-[![buildStatus](https://github.com/ddobric/neocortexapi/workflows/.NET%20Core/badge.svg)](https://github.com/ddobric/neocortexapi/actions?query=workflow%3A%22.NET+Core%22)
-[![NuGet](https://badge.fury.io/nu/NeoCortexApi.svg)](https://www.nuget.org/packages/NeoCortexApi)
+# ML 24/25-01 Investigate Image Reconstruction By using Classifier
+###### Through out this project we contribute to  implement the image reconstruction using classifiers in NeoCortexAPI
 
-# Introduction
-This repository is the open source implementation of the Hierarchical Temporal Memory in C#/.NET Core. This repository contains set of libraries around **NeoCortext** API .NET Core library. **NeoCortex** API focuses implementation of _Hierarchical Temporal Memory Cortical Learning Algorithm_. Current version is first implementation of this algorithm on .NET platform. It includes the **Spatial Pooler**, **Temporal Pooler**, various encoders and **CorticalNetwork**  algorithms. Implementation of this library aligns to existing Python and JAVA implementation of HTM. Due similarities between JAVA and C#, current API of SpatialPooler in C# is very similar to JAVA API. However the implementation of future versions will include some API changes to API style, which is additionally more aligned to C# community.
-This repository also cotains first experimental implementation of distributed highly scalable HTM CLA based on Actor Programming Model.
-The code published here is experimental code implemented during my research at daenet and Frankfurt University of Applied Sciences. 
+[![N|Logo](https://ddobric.github.io/neocortexapi/images/logo-NeoCortexAPI.svg )](https://ddobric.github.io/neocortexapi/)
 
-## Getting started
-To get started, please see <a href="https://github.com/ddobric/neocortexapi/blob/master/source/Documentation/gettingStarted.md">this document.</a>
+In this Documentation we will describe our contribution in this project.
 
-# References
+#### Instruction for Running the Project
+- Clone the Repository and Run
+- You will get the project here
+  [NeoCortexApiSample](source/Samples/NeoCortexApiSample/ImageReconstructionwithHtm_KNNClassifier.cs)
+  
+#### Experiment
+- **`ImageReconstructionwithHtm_KNNClassifier.cs`** : Image Inputs :[ImageReconstructionwithHtm_KNNClassifier](source/Samples/NeoCortexApiSample/ImageReconstructionwithHtm_KNNClassifier.cs)
 
-HTM School:
-https://www.youtube.com/playlist?list=PL3yXMgtrZmDqhsFQzwUC9V8MeeVOQ7eZ9&app=desktop
+###### Image Input sets are already uploaded here
+- Binge_Coders_Team\source\Samples\NeoCortexApiSample\bin\Debug\net8.0\Sample\TestFiles
+###### Simply Change the Running commands here 
+- **`Program.cs`**: Goto Program.cs file of NeoCortexApiSample
+- Change the codes here Click the Link below and it will Redirect you.
+[Program.cs](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/Samples/NeoCortexApiSample/Program.cs)
 
-HTM Overview:
-https://en.wikipedia.org/wiki/Hierarchical_temporal_memory
+###### All the output will be saved here
+- Binge_Coders_Team\source\Samples\NeoCortexApiSample\bin\Debug\net8.0\Output
+#### Running Unit Test Experiments
+Go to this File and Run Unit-Test Project for **`similarityFunctions.cs`**
+[Imagereconstructiontest](https://github.com/rajansingh44/Binge_Coders_Team/tree/development/source/UnitTestsProject/Imagereconstructiontest)
 
-A Machine Learning Guide to HTM:
-https://numenta.com/blog/2019/10/24/machine-learning-guide-to-htm
+## Introduction
 
-Numenta on Github:
-https://github.com/numenta
+Image reconstruction is a critical task in computer vision, where missing or degraded images are restored using machine learning techniques. This study explores the use of classifiers—K-Nearest Neighbors (KNN) and Hierarchical Temporal Memory (HTM)—for reconstructing images from Sparse Distributed Representations (SDRs). By leveraging NeoCortexApi, the system processes binarized images, classifies them, and reconstructs original structures while assessing accuracy using Cosine similarity metrics.
 
-HTM Community:
-https://numenta.org/
+# Methodology
 
-A deep dive in HTM Temporal Memory algorithm:
-https://numenta.com/assets/pdf/temporal-memory-algorithm/Temporal-Memory-Algorithm-Details.pdf
+*Fig: Methodology Flowchart*
+(Adding Block diagram)
+The image reconstruction pipeline consists of multiple stages: image binarization, SDR encoding, classification, and reconstruction. 
 
-Continious Online Sequence Learning with HTM:
-https://www.mitpressjournals.org/doi/full/10.1162/NECO_a_00893#.WMBBGBLytE6
+# HTM & KNN Classifier-Based Image Reconstruction
 
-# Papers and conference proceedings
+## Overview
 
-#### International Journal of Artificial Intelligence and Applications
-Scaling the HTM Spatial Pooler
+This project explores image reconstruction using **Hierarchical Temporal Memory (HTM)** and **K-Nearest Neighbors (KNN)** classifiers. The core idea is to binarize input images, process them into **Sparse Distributed Representations (SDRs)** using a Spatial Pooler, classify the SDRs, and reconstruct images from the predicted SDRs. The reconstructed images are then compared using similarity metrics.
 
-Dobric, Pech, Ghita, Wennekers 2020. 2020 International Journal of Artificial Intelligence and Applications. Scaling the HTM Spatial Pooler. doi:10.5121/ijaia .2020.11407
+## Key Components
 
-#### AIS 2020 - 6th International Conference on Artificial Intelligence and Soft Computing (AIS 2020), Helsinki
-The Parallel HTM Spatial Pooler with Actor Model
+### 1. **Image Binarization**
 
-Dobric, Pech, Ghita, Wennekers 2020. 2020 AIS 2020 - 6th International Conference on Artificial Intelligence and Soft Computing, Helsinki. The Parallel HTM Spatial Pooler with Actor Model. https://aircconline.com/csit/csit1006.pdf, doi:10.5121/csit.2020.100606
+Images are converted into binary matrices (0s and 1s) before processing.
 
-#### Symposium on Pattern Recognition and Applications - Rome, Italy
-On the Relationship Between Input Sparsity and Noise Robustness in Hierarchical Temporal Memory Spatial Pooler 
+```csharp
+public static int[,] BinarizeImage(Bitmap image, int threshold = 128) {
+    int width = image.Width;
+    int height = image.Height;
+    int[,] binarizedImage = new int[width, height];
+    
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            Color pixel = image.GetPixel(x, y);
+            int gray = (pixel.R + pixel.G + pixel.B) / 3;
+            binarizedImage[x, y] = gray > threshold ? 1 : 0;
+        }
+    }
+    return binarizedImage;
+}
+```
 
-Dobric, Pech, Ghita, Wennekers 2020. 2020 Symposium on Pattern Recognition and Applications. On the Relationship Between Input Sparsity and Noise Robustness in Hierarchical Temporal Memory Spatial Pooler. https://dl.acm.org/doi/10.1145/3393822.3432317. doi:10.1145/3393822.3432317
+### 2. **Generating SDRs using the Spatial Pooler**
 
-#### International Conference on Pattern Recognition Applications and Methods - ICPRAM 2021
-Improved HTM Spatial Pooler with Homeostatic Plasticity Control (Awarded with: *Best Industrial Paper*)
+The **Spatial Pooler** converts binarized images into **Sparse Distributed Representations (SDRs)**.
 
-Dobric, Pech, Ghita, Wennekers 2021. ICPRAM Vienna Improved HTM Spatial Pooler with Homeostatic Plasticity control. doi:10.5220/0010314200980106
+```csharp
+SpatialPooler sp = new SpatialPooler();
+sp.Compute(inputArray, activeArray);
+```
 
-#### Springer Nature - Computer Sciences
-On the Importance of the Newborn Stage When Learning Patterns with the Spatial Pooler
+### 3. **Classification using HTM and KNN**
 
-Dobric, Pech, Ghita, Wennekers 2022. Springer Nature Computer Science Journal
-On the Importance of the Newborn Stage When Learning Patterns with the Spatial Pooler. https://rdcu.be/cIcoc. doi:10.1007/s42979-022-01066-4
+#### HTM Classifier Training & Prediction
 
-# Contribute
-If your want to contribute on this project please contact us by opening an issue. 
+```csharp
+HTMClassifier classifier = new HTMClassifier();
+classifier.Learn(trainingSDR, label);
+var predictedSDR = classifier.Predict(testSDR);
+```
+
+#### KNN Classifier Training & Prediction
+
+```csharp
+KNNClassifier knn = new KNNClassifier(k: 5);
+knn.Train(trainingSDRs, trainingLabels);
+var predictedSDR = knn.Predict(testSDR);
+```
+
+### 4. **Image Reconstruction**
+
+The predicted SDRs are used to reconstruct images.
+
+```csharp
+public Bitmap ReconstructImage(int[] predictedSDR, int width, int height) {
+    Bitmap reconstructed = new Bitmap(width, height);
+    for (int x = 0; x < width; x++) {
+        for (int y = 0; y < height; y++) {
+            int value = predictedSDR[x + y * width] > 0 ? 255 : 0;
+            reconstructed.SetPixel(x, y, Color.FromArgb(value, value, value));
+        }
+    }
+    return reconstructed;
+}
+```
+
+### 5. **Similarity Calculation**
+
+We compare original and reconstructed images using **Adjusted Jaccard Similarity** (HTM) and **Cosine Similarity** (KNN).
+
+#### Adjusted Cosine Similarity (HTM)
+
+```csharp
+public static double AdjustedJaccardSimilarity(int[] a, int[] b) {
+    int intersection = a.Zip(b, (x, y) => x & y).Sum();
+    int union = a.Zip(b, (x, y) => x | y).Sum();
+    return union == 0 ? 0 : (double)intersection / union;
+}
+```
+
+#### Cosine Similarity (KNN)
+
+```csharp
+public static double CosineSimilarity(int[] a, int[] b) {
+    double dot = a.Zip(b, (x, y) => x * y).Sum();
+    double magA = Math.Sqrt(a.Sum(x => x * x));
+    double magB = Math.Sqrt(b.Sum(y => y * y));
+    return magA == 0 || magB == 0 ? 0 : dot / (magA * magB);
+}
+```
+
+### 6. **Results Visualization**
+
+The similarity metrics are plotted using CSV data.
+
+```csharp
+public void GenerateSimilarityGraph() {
+    var data = LoadCSV("similarity_results.csv");
+    PlotGraph(data);
+}
+```
+
+## Running the Project
+
+1. **Prepare Data:** Ensure images are binarized.
+2. **Train Classifiers:** Use training images to learn SDR patterns.
+3. **Predict SDRs:** Run the trained classifiers on test images.
+4. **Reconstruct Images:** Convert predicted SDRs back into images.
+5. **Evaluate Results:** Compare reconstructed images with originals.
+
+## Conclusion
+
+This project demonstrates how **HTM** and **KNN** classifiers can be used for **image reconstruction** based on SDRs. The similarity metrics provide insights into the effectiveness of each method.
 
 
+
+
+
+Image Binarization – Converting images into binary 0 or 1's format.
+SDR Encoding – Transforming binary images into high-dimensional representations called SDRs.
+Classification – Using KNN and HTM to recognize and reconstruct images.
+Reconstruction & Evaluation – Comparing reconstructed images with the original using Cosine similarity.
+
+KNN, a distance-based classifier, retrieves the closest match from the training dataset, aiding direct pattern reconstruction. HTM, inspired by biological intelligence, learns spatial patterns and continuously adapts over time. The reconstruction quality is evaluated using Cosine similarity measures, quantifying structural accuracy. The choice of classifier impacts reconstruction fidelity, with KNN excelling in direct comparisons and HTM offering adaptability. After generating the reconstructed image, we are comparing the original images with reconstructed images from HTM as well as KNN classifiers.
+
+# implementation
+# **HTM and KNN Classifier Training Process**
+
+This document describes the training process for the **HTM (Hierarchical Temporal Memory) Classifier** and **KNN (K-Nearest Neighbors) Classifier** using image-based **Sparse Distributed Representations (SDRs)**.
+
+## **Training Phase**
+The training phase processes multiple images to generate SDRs and train both classifiers. The process continues until the system reaches a stable state or completes the maximum training cycles.
+
+### **Training Loop**
+The training loop runs until either:
+- The system reaches a **stable state**, or
+- The **maximum training cycles** (`maxCycles`) are completed.
+
+### **Steps in Each Training Cycle**
+For each image, the following steps are performed:
+
+1. **Binarization**: Convert the image into a binary representation.
+   ```csharp
+   string binarizedImageFile = BinarizeImageToFixedSize(image, imgSize);
+   ```
+   - Resizes the image and converts it into a binary format.
+   - Saves the binary image as a text file.
+
+2. **Read Binary Representation**: Read the binary representation from the text file.
+   ```csharp
+   int[] inputVector = ReadBinaryTextFile(binarizedImageFile);
+   ```
+
+3. **Compute Active Columns Using Spatial Pooler**:
+   ```csharp
+   sp.compute(inputVector, activeArray, true);
+   var activeCols = ArrayUtils.IndexWhere(activeArray, el => el == 1);
+   ```
+   - Converts the binary input into an SDR.
+   - Extracts active columns representing key image features.
+
+4. **Convert Active Columns to SDR Format**:
+   ```csharp
+   var activeCells = activeCols.Select(colIdx => new NeoCortexApi.Entities.Cell { Index = colIdx }).ToArray();
+   ```
+
+5. **Train the KNN Classifier**:
+   ```csharp
+   knnClassifier.Learn(image, activeCells);
+   ```
+
+6. **Train the HTM Classifier**:
+   ```csharp
+   Htmclassifier.Learn(image, activeCols);
+   ```
+
+7. **Store SDR in Dictionary for Later Retrieval**:
+   ```csharp
+   if (!storedSDRs.ContainsKey(image))
+   {
+       storedSDRs[image] = new List<int[]>();
+   }
+   storedSDRs[image].Add(activeCols);
+   ```
+
+8. **Save SDR to a File**:
+   ```csharp
+   string sdrFilePath = Path.Combine(sdrFolder, $"{Path.GetFileNameWithoutExtension(image)}.csv");
+   File.WriteAllText(sdrFilePath, string.Join(",", activeCols));
+   ```
+
+9. **Handle Errors**:
+   ```csharp
+   catch (Exception ex)
+   {
+       Debug.WriteLine($" Error processing {image}: {ex.Message}");
+   }
+   ```
+
+10. **Increment Training Cycle**:
+    ```csharp
+    currentCycle++;
+    Debug.WriteLine($" Completed Cycle {currentCycle}.");
+    ```
+
+### **Checking Model Stability**
+After training, the system checks whether a **stable state** has been reached:
+```csharp
+if (!isInStableState)
+{
+    Debug.WriteLine(" Training completed, but stable state not reached.");
+}
+else
+{
+    Debug.WriteLine(" Training completed successfully.");
+}
+```
+
+---
+
+## **Logging Predicted SDRs**
+After training, the predicted SDRs are logged for both classifiers.
+
+### **Logging KNN Predictions**
+```csharp
+Debug.WriteLine("\n--- PREDICTED KNN SDRs ---");
+foreach (var sdr in predictedSDRsListKnn)
+{
+    Debug.WriteLine($"Predicted SDR: {string.Join(", ", sdr)}");
+}
+```
+
+### **Logging HTM Predictions**
+```csharp
+Debug.WriteLine("\n--- PREDICTED HTM SDRs ---");
+foreach (var sdr in predictedSDRsListHtm)
+{
+    Debug.WriteLine($"Predicted SDR: {string.Join(", ", sdr)}");
+}
+```
+
+### **Logging Stored SDRs**
+```csharp
+Debug.WriteLine("\n--- STORED SDRs ---");
+foreach (var label in storedSDRs.Keys)
+{
+    foreach (var storedSDR in storedSDRs[label])
+    {
+        Debug.WriteLine($"Label: {label}, SDR: {string.Join(", ", storedSDR)}");
+    }
+}
+```
+
+---
+
+## **Summary**
+This process trains both KNN and HTM classifiers using images by:
+1. **Binarizing images**.
+2. **Generating SDRs** using the **Spatial Pooler**.
+3. **Training the classifiers** using SDRs.
+4. **Storing and saving SDRs**.
+5. **Logging predicted and stored SDRs**.
+
+This README provides a structured overview of the training and logging process for easy integration into the project documentation.
+
+
+2- Classification Phase
+
+# Classification and Image Reconstruction
+
+## Classification Phase  
+
+This phase **classifies SDRs** using **K-Nearest Neighbors (KNN)** and **Hierarchical Temporal Memory (HTM)** classifiers.
+
+### KNN-Based Classification  
+- Converts each SDR into an array of active cells.  
+- Uses **KNN classifier** to predict labels.  
+- Logs the predicted labels for analysis.  
+
+### HTM-Based Classification  
+- Converts each SDR into an array of active cells.  
+- Uses **HTM classifier** to predict labels.  
+- Logs the predicted labels for analysis.  
+
+#### Example Output:  
+
+3- Image Reconstruction Phase
+
+---
+
+## Image Reconstruction Phase  
+
+After classification, **image reconstruction** is performed using the **predicted SDRs**.
+
+### KNN-Based Image Reconstruction  
+- Uses **KNN-predicted SDRs** to reconstruct images.  
+- Evaluates how closely the reconstructed image matches the original input.  
+
+### HTM-Based Image Reconstruction  
+- Uses **HTM-predicted SDRs** to reconstruct images.  
+- Analyzes how well the HTM classifier retained image patterns.  
+
+#### Example Debug Output:  
+
+---
+
+## Image Reconstruction Phase  
+
+After classification, **image reconstruction** is performed using the **predicted SDRs**.
+
+### KNN-Based Image Reconstruction  
+- Uses **KNN-predicted SDRs** to reconstruct images.  
+- Evaluates how closely the reconstructed image matches the original input.  
+
+### HTM-Based Image Reconstruction  
+- Uses **HTM-predicted SDRs** to reconstruct images.  
+- Analyzes how well the HTM classifier retained image patterns.  
+
+#### Example Debug Output:  
+
+---
+
+## Image Reconstruction Phase  
+
+After classification, **image reconstruction** is performed using the **predicted SDRs**.
+
+### KNN-Based Image Reconstruction  
+- Uses **KNN-predicted SDRs** to reconstruct images.  
+- Evaluates how closely the reconstructed image matches the original input.  
+
+### HTM-Based Image Reconstruction  
+- Uses **HTM-predicted SDRs** to reconstruct images.  
+- Analyzes how well the HTM classifier retained image patterns.  
+
+#### Example Debug Output:  
+
+---
+
+## Summary  
+This phase ensures that the system correctly classifies and reconstructs input images using SDRs. The **KNN and HTM classifiers** provide a robust comparison between similarity-based learning and temporal memory-based learning.
+
+4- Returning Trained Components & Results
+// ==========================================
+//     RETURN TRAINED COMPONENTS & RESULTS
+// ==========================================
+
+/// <summary>
+/// Returns trained classifiers, predicted SDRs, and stored SDRs for further processing.
+/// </summary>
+return (sp, knnClassifier, Htmclassifier, predictedSDRsListKnn, predictedSDRsListHtm, storedSDRs);
+
+*Results Example:*
+
+*Fig: Final Outcome for Image  input*
+
+
+### CosineSimilarity_IdenticalVectors_ReturnsOne
+- *Test Category:* CosineSimilarityIdenticalVectors
+- *Description: * Verifies that the CosineSimilarity function returns 1.0 when comparing two identical vectors.
+
+### CosineSimilarity_CompletelyDifferentVectors_ReturnsZero
+- *Test Category:* CosineSimilarityDifferentVectors
+- *Description: * Confirms that CosineSimilarity correctly returns 0.0 when given two completely dissimilar vectors.
+
+### CosineSimilarity_PartiallySimilarVectors_ReturnsExpectedValue
+- *Test Category:* CosineSimilarityPartialMatch
+- *Description: * Ensures that the function returns a similarity score between 0.0 and 1.0 when given two partially similar vectors.
+
+
+### ConvertPermanenceToBinary_ValidInput_ReturnsExpectedBinaryArray
+- *Test Category:* PermanenceConversionValidInput
+- *Description: * Ensures that the ConvertPermanenceToBinary function correctly converts permanence values into binary format using a 0.7 threshold.
+
+### ConvertPermanenceToBinary_AllPositivePermanences_ReturnsExpectedValues
+- *Test Category:* PermanenceConversionAllPositive
+- *Description: * Verifies that the function correctly processes an array where all permanence values are non-negative.
+
+### ConvertPermanenceToBinary_NegativeValue_ThrowsException
+- *Test Category:* PermanenceConversionNegativeValues
+- *Description: * Confirms that an ArgumentException is thrown when a permanence array contains negative values.
+
+
+### AddActiveColsToStoredSDRs_StoresActiveColumnsCorrectly
+- *Test Category:* SDRStorageValidation
+- *Description: * Verifies that the AddActiveColsToStoredSDRs function correctly stores active column SDRs in a dictionary, ensuring accurate image reconstruction and classification.
