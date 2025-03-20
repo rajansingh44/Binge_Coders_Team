@@ -5,6 +5,7 @@ using NeoCortexApi.Entities;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml.FormulaParsing.LexicalAnalysis;
 using Org.BouncyCastle.Ocsp;
+using ScottPlot.Drawing.Colormaps;
 using System;
 using System.Buffers;
 using System.Collections;
@@ -21,13 +22,11 @@ namespace NeoCortexApiSample
 {
     class Program
     {
-        static double MinVal = 0.0;
-        static double MaxVal = 99.0;
 
-        /// <summary>
-        /// This sample shows a typical experiment code for SP and TM.
-        /// You must start this code in debugger to follow the trace.
-        /// and TM.
+         /// <summary>
+        ///This class implements an **image reconstruction pipeline** 
+        ///using **HTM (Hierarchical Temporal Memory) and KNN (K-Nearest Neighbors)** classifiers. 
+        ///It processes images, extracts Spatial Pooler(SP) representations, trains classifiers, and reconstructs images based on predictions.
         /// </summary>
         /// <param name="args"></param>
         static void Main(string[] args)

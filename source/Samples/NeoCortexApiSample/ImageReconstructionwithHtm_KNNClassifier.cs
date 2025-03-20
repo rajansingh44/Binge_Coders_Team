@@ -521,7 +521,7 @@ namespace NeoCortexApiSample
             string jaccardDir = "HTM_Similarity_Results";
             Directory.CreateDirectory(jaccardDir);
             File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
-            CreateCombinedSimilarityCSV();
+           // CreateCombinedSimilarityCSV();
         }
 
         /// <summary>
@@ -546,7 +546,49 @@ namespace NeoCortexApiSample
         /// Creates a combined similarity CSV file from KNN and HTM similarity results.
         /// Generates bar charts divided into 6 images if there are more than 350 values.
         /// </summary>
-        
+        private void CreateCombinedSimilarityCSV()
+        {
+            string knnFilePath = Path.Combine("KNN_Similarity_Results", "Similarity_KNN.csv");
+            string htmFilePath = Path.Combine("JaccardSimilarityResults", "Similarity_HTM.csv");
+            string combinedDir = "CombinedSimilarityResults";
+            string combinedFilePath = Path.Combine(combinedDir, "Similarity_Combined.csv");
+
+            Directory.CreateDirectory(combinedDir);
+
+            List<string> knnLines = File.Exists(knnFilePath) ? File.ReadAllLines(knnFilePath).ToList() : new List<string>();
+            List<string> htmLines = File.Exists(htmFilePath) ? File.ReadAllLines(htmFilePath).ToList() : new List<string>();
+
+            List<string> combinedResults = new List<string> { "Image, KNN Similarity (%), HTM Similarity (%)" };
+            List<string> imageNames = new List<string>();
+            List<double> knnSimilarities = new List<double>();
+            List<double> htmSimilarities = new List<double>();
+
+            int maxLines = Math.Max(knnLines.Count, htmLines.Count);
+
+            for (int i = 0; i < maxLines; i++)
+            {
+                string knnEntry = i < knnLines.Count ? knnLines[i] : "N/A, N/A";
+                string htmEntry = i < htmLines.Count ? htmLines[i].Split(',')[1] : "N/A";
+
+                string imageName = knnEntry.Split(',')[0];
+                string knnSimilarity = knnEntry.Split(',').Length > 1 ? knnEntry.Split(',')[1] : "N/A";
+
+                combinedResults.Add($"{imageName}, {knnSimilarity}, {htmEntry}");
+
+                if (double.TryParse(knnSimilarity, out double knnValue) && double.TryParse(htmEntry, out double htmValue))
+                {
+                    imageNames.Add(imageName);
+                    knnSimilarities.Add(knnValue);
+                    htmSimilarities.Add(htmValue);
+                }
+            }
+
+            File.WriteAllLines(combinedFilePath, combinedResults);
+            Debug.WriteLine("Combined similarity CSV generated successfully.");
+
+            // Generate similarity comparison graphs
+            GenerateSimilarityGraph(imageNames, knnSimilarities, htmSimilarities, combinedDir);
+        }
 
 
         /// <summary>
@@ -677,9 +719,39 @@ namespace NeoCortexApiSample
 
         }
 
+        public static string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        {
+            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
+
+            using (Bitmap originalImage = new Bitmap(imagePath))
+            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
+            {
+                int[] binaryArray = new int[gridSize * gridSize];
+
+                for (int y = 0; y < gridSize; y++)
+                {
+                    for (int x = 0; x < gridSize; x++)
+                    {
+                        Color pixelColor = resizedImage.GetPixel(x, y);
+                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
+                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
+                    }
+                }
+
+                using (StreamWriter writer = new StreamWriter(outputFile))
+                {
+                    for (int i = 0; i < gridSize; i++)
+                    {
+                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
+                    }
+                }
+            }
+
+            return outputFile;
+        }
 
 
-        private int[] ReadBinaryTextFile(string filePath)
+        public int[] ReadBinaryTextFile(string filePath)
         {
             var lines = File.ReadAllLines(filePath);
             return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
