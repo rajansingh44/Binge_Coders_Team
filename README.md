@@ -7,7 +7,7 @@ In this Documentation we will describe our contribution in this project.
 
 #### Instruction for Running the Project
 Our Team has worked on [NeoCortexApi](https://github.com/ddobric/neocortexapi), please follow the below instructions:
-- Clone the Repository and Run
+- Clone the Repository 
 - You will get the project here
   [NeoCortexApiSample](source/Samples/NeoCortexApiSample/ImageReconstructionwithHtm_KNNClassifier.cs)
   
