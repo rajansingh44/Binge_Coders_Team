@@ -353,24 +353,8 @@ namespace NeoCortexApiSample
                 NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
                 Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
 
-                //print the SDR and Permanance Values
-                double jaccardSimilarity = JaccardSimilarity(predictedSDR, normalizePermanenceList.ToArray());
-                double similarityPercentage = jaccardSimilarity * 100;
-                jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
-                Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
+           
 
-                int[] inputVector = normalizePermanenceList.ToArray();
-
-
-                //Calculating Similarity with encoded Inputs and Reconstructed Inputs
-                var similarity = MathHelpers.JaccardSimilarityofBinaryArrays(inputVector, normalizePermanenceList.ToArray());
-
-
-
-                double[] similarityArray = new double[] { similarity };
-
-                //Collecting Similarity Data for visualizing
-                similarityList.Add(similarityArray);
             }
             // Generate the Similarity graph using the Similarity list
             DrawSimilarityPlots(similarityList);
@@ -463,41 +447,7 @@ namespace NeoCortexApiSample
         }
 
 
-
-
-
-        private string BinarizeImageToFixedSize(string imagePath, int gridSize)
-        {
-            string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
-
-            using (Bitmap originalImage = new Bitmap(imagePath))
-            using (Bitmap resizedImage = new Bitmap(originalImage, new Size(gridSize, gridSize)))
-            {
-                int[] binaryArray = new int[gridSize * gridSize];
-
-                for (int y = 0; y < gridSize; y++)
-                {
-                    for (int x = 0; x < gridSize; x++)
-                    {
-                        Color pixelColor = resizedImage.GetPixel(x, y);
-                        int grayValue = (pixelColor.R + pixelColor.G + pixelColor.B) / 3;
-                        binaryArray[y * gridSize + x] = (grayValue > 128) ? 1 : 0;
-                    }
-                }
-
-                using (StreamWriter writer = new StreamWriter(outputFile))
-                {
-                    for (int i = 0; i < gridSize; i++)
-                    {
-                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
-                    }
-                }
-            }
-
-            return outputFile;
-
-
-                 private static string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        private static string BinarizeImageToFixedSize(string imagePath, int gridSize)
         {
             string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
 
@@ -531,9 +481,8 @@ namespace NeoCortexApiSample
 
         private int[] ReadBinaryTextFile(string filePath)
         {
-            var lines = File.ReadAllLines(filePath);
+            var lines = File.ReadLines(filePath);
             return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
         }
-    }
     }
 }
