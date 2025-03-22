@@ -304,16 +304,16 @@ namespace NeoCortexApiSample
             }
 
             /// <summary>
-            /// Logs all stored SDRs before classification.
-            /// </summary>
-            //Debug.WriteLine("\n--- STORED SDRs ---");
-            //foreach (var label in storedSDRs.Keys)
-            //{
-            //    foreach (var storedSDR in storedSDRs[label])
-            //    {
-            //        Debug.WriteLine($"Label: {label}, SDR: {string.Join(", ", storedSDR)}");
-            //    }
-            //}
+            / Logs all stored SDRs before classification.
+            / </ summary >
+            Debug.WriteLine("\n--- STORED SDRs ---");
+            foreach (var label in storedSDRs.Keys)
+            {
+                foreach (var storedSDR in storedSDRs[label])
+                {
+                    Debug.WriteLine($"Label: {label}, SDR: {string.Join(", ", storedSDR)}");
+                }
+            }
 
             // ==========================================
             //           CLASSIFICATION PHASE
