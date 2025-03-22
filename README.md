@@ -35,10 +35,11 @@ Go to this File and Run Unit-Test Project for **`similarityFunctions.cs`**
 
 Image reconstruction is a critical task in computer vision, where missing or degraded images are restored using machine learning techniques. This study explores the use of classifiers—K-Nearest Neighbors (KNN) and Hierarchical Temporal Memory (HTM)—for reconstructing images from Sparse Distributed Representations (SDRs). By leveraging NeoCortexApi, the system processes binarized images, classifies them, and reconstructs original structures while assessing accuracy using Cosine similarity metrics.
 
-# Methodology
+# Methodology: 
+Below flow diagram explains the flow of the entire project.
 
-*Fig: Methodology Flowchart*
-(Adding Block diagram)
+![*Fig: Methodology Flowchart*](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/SE_Project_Methodology.png)
+
 The image reconstruction pipeline consists of multiple stages: image binarization, SDR encoding, classification, and reconstruction. 
 
 ## Overview
@@ -387,7 +388,7 @@ The performance of HTM and KNN classifiers was evaluated by comparing the recons
 
 
 
- output image
+ ![outputimage](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/Output_MySEProject.png)
 
 
 
@@ -398,7 +399,7 @@ The performance of HTM and KNN classifiers was evaluated by comparing the recons
 
 
 
- similarity graph
+ ![similaritygraph](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/My_SEPROJECT_Graph.jpeg)
 
 
 
