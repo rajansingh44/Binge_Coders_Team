@@ -456,7 +456,63 @@ namespace NeoCortexApiSample
             return magnitude1 == 0 || magnitude2 == 0 ? 0 : dotProduct / (Math.Sqrt(magnitude1) * Math.Sqrt(magnitude2));
         }
 
-        
+        public void RunRustructuringExperimentHtm(SpatialPooler sp, List<int[]> predictedSDRsList)
+        {
+            List<int[]> normalizedPermanence_a = new List<int[]>(); // List to store normalized permanence values
+            List<double[]> similarityList = new List<double[]>(); // List for storing similarity values for graph plotting
+            List<string> jaccardResults = new List<string>(); // List to store Jaccard similarity results
+
+            foreach (var predictedSDR in predictedSDRsList)
+            {
+                Debug.WriteLine("Reconstructing permanence for SDR...");
+
+                // Reconstruct the permanence values for the predicted SDR
+                Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
+                Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
+
+                foreach (var kvp in reconstructedPermanence)
+                {
+                    allPermanenceDictionary[kvp.Key] = kvp.Value;
+                }
+
+                int imgsize = 52 * 52; // Assuming image size is 52x52 pixels
+
+                // Assign inactive columns a permanence value of 0
+                for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
+                {
+                    if (!reconstructedPermanence.ContainsKey(inputIndex))
+                    {
+                        allPermanenceDictionary[inputIndex] = 0.0;
+                    }
+                }
+
+                // Normalize permanence values using a threshold
+                var ThresholdValue = 67.0;
+                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+                normalizedPermanence_a.Add(normalizePermanenceList.ToArray());
+
+                // Save the reconstructed binary image
+                string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
+                NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
+                Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
+
+                // Calculate Similarity between original SDR and reconstructed SDR
+                double jaccardSimilarity = AdjustedCosineSimilarity(predictedSDR, normalizePermanenceList.ToArray());
+                double similarityPercentage = jaccardSimilarity * 100;
+                jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
+                Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
+
+                int[] inputVector = normalizePermanenceList.ToArray();
+
+                // Prepare data for similarity graph plotting
+                int[] sortedPredictedSDR = predictedSDR.OrderByDescending(x => x).ToArray();
+                int[] sortedNormalizePermanenceList = normalizePermanenceList.ToArray().OrderByDescending(x => x).ToArray();
+
+                // Collect similarity data for visualization
+                double[] similarityArray = new double[] { similarityPercentage };
+                similarityList.Add(similarityArray);
+            }
 
             // Generate the similarity graph using collected data
             DrawSimilarityPlots(similarityList);
