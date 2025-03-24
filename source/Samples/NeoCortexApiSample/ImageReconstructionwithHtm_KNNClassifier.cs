@@ -742,9 +742,12 @@ namespace NeoCortexApiSample
                 {
                     for (int i = 0; i < gridSize; i++)
                     {
-                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
+                        string row = new string(binaryArray.Skip(i * gridSize).Take(gridSize).ToArray());
+                        writer.WriteLine(row);
                     }
                 }
+                   
+
             }
 
             return outputFile;
