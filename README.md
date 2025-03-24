@@ -35,10 +35,81 @@ Go to this File and Run Unit-Test Project for **`similarityFunctions.cs`**
 
 Image reconstruction is a critical task in computer vision, where missing or degraded images are restored using machine learning techniques. This study explores the use of classifiers—K-Nearest Neighbors (KNN) and Hierarchical Temporal Memory (HTM)—for reconstructing images from Sparse Distributed Representations (SDRs). By leveraging NeoCortexApi, the system processes binarized images, classifies them, and reconstructs original structures while assessing accuracy using Cosine similarity metrics.
 
-# Methodology
+# Methodology: 
+Below flow diagram explains the flow of the entire project.
 
-*Fig: Methodology Flowchart*
-(Adding Block diagram)
+![*Fig: Methodology Flowchart*](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/SE_Project_Methodology.png)
+
+This project investigates image reconstruction using two different classifiers:  
+- **K-Nearest Neighbors (KNN) Classifier**  
+- **Hierarchical Temporal Memory (HTM) Classifier**  
+
+The workflow involves processing an input image, generating Sparse Distributed Representations (SDRs), classifying them using KNN and HTM, reconstructing the image, and comparing the results.
+
+---
+
+## **Workflow Overview**
+### **1. Image Input**
+- The system takes an image as input for processing.
+
+### **2. Image Binarizer**
+- Converts the input image into a binary format.
+- Uses `NeoCortexUtils.BinarizeImage` for transformation.
+- Prepares the image for further processing.
+
+### **3. Binarized Output Data**
+- Represents the processed binary image.
+- This data is used for generating SDRs.
+
+### **4. Spatial Pooler**
+- Processes the binarized image using the **Spatial Pooler (SP) from NeoCortexApi**.
+- Generates SDRs that capture essential image features.
+- Helps in reducing noise and extracting key patterns.
+
+### **5. SDRs From Spatial Pooler**
+- The Spatial Pooler outputs SDRs.
+- These SDRs are used as inputs for both classifiers.
+
+---
+
+## **Classification Paths**
+The system evaluates two different classifiers in parallel:
+
+### **6. KNN Classifier**
+- Takes SDRs as input.
+- Uses the **K-Nearest Neighbors (KNN) approach** to find the most similar SDRs.
+- Predicts the closest matching SDRs.
+
+### **7. Predicted SDRs (KNN)**
+- The KNN classifier outputs predicted SDRs.
+- These SDRs are used for image reconstruction.
+
+### **8. Reconstructed Image (KNN)**
+- Converts predicted SDRs back into an image.
+- Used for performance evaluation.
+
+---
+
+### **9. HTM Classifier**
+- Takes SDRs as input.
+- Uses an **HTM-based classifier** for pattern learning and prediction.
+- Predicts the SDRs based on previously learned data.
+
+### **10. Predicted SDRs (HTM)**
+- The HTM classifier outputs predicted SDRs.
+- These SDRs are used for image reconstruction.
+
+### **11. Reconstructed Image (HTM)**
+- Converts HTM-predicted SDRs back into an image.
+- Used for performance evaluation.
+
+---
+
+## **Final Comparison and Evaluation**
+### **12. Comparison (Similarity/Efficiency)**
+Two comparison points:
+1. **KNN vs. HTM Classifier** – Compares prediction accuracy and computational efficiency.
+2. **Reconstructed Images from Both Classifiers** – Assesses which method provides better reconstruction.
 The image reconstruction pipeline consists of multiple stages: image binarization, SDR encoding, classification, and reconstruction. 
 
 ## Overview
@@ -387,7 +458,7 @@ The performance of HTM and KNN classifiers was evaluated by comparing the recons
 
 
 
- output image
+ ![outputimage](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/Output_MySEProject.png)
 
 
 
@@ -398,7 +469,7 @@ The performance of HTM and KNN classifiers was evaluated by comparing the recons
 
 
 
- similarity graph
+ ![similaritygraph](https://github.com/rajansingh44/Binge_Coders_Team/blob/development/source/MySEProject/Documentation/Misc.%20Documents/My_SEPROJECT_Graph.jpeg)
 
 
 
