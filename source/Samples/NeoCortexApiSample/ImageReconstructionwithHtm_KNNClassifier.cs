@@ -738,16 +738,14 @@ namespace NeoCortexApiSample
                     }
                 }
 
+
                 using (StreamWriter writer = new StreamWriter(outputFile))
                 {
                     for (int i = 0; i < gridSize; i++)
                     {
-                        string row = new string(binaryArray.Skip(i * gridSize).Take(gridSize).ToArray());
-                        writer.WriteLine(row);
+                        writer.WriteLine(string.Join("", binaryArray.Skip(i * gridSize).Take(gridSize)));
                     }
                 }
-                   
-
             }
 
             return outputFile;
