@@ -682,43 +682,46 @@ namespace NeoCortexApiSample
         }
 
 
+        /// <summary>
+        /// Draws similarity plots by combining all similarity values from a list and saves the plot as an image.
+        /// </summary>
+        /// <param name="similaritiesList">A list of arrays containing similarity values.</param>
         public static void DrawSimilarityPlots(List<double[]> similaritiesList)
-        {
-            // Combine all similarities from the list of arrays
-
+{
+        // Combine all similarities from the list of arrays
             List<double> combinedSimilarities = new List<double>();
             foreach (var similarities in similaritiesList)
-
             {
                 combinedSimilarities.AddRange(similarities);
             }
 
-            // Define the folder path based on the current directory
+        // Define the folder path based on the current directory
+        string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
 
-            string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
-
-
-            // Create the folder if it doesn't exist
-
+        // Create the folder if it doesn't exist
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
             }
 
-            // Define the file name
-            string fileName = "combined_similarity_plot_Image_Inputs.png";
+        // Define the file name
+        string fileName = "combined_similarity_plot_Image_Inputs.png";
 
-            // Define the file path with the folder path and file name
+        // Define the file path with the folder path and file name
+        string filePath = Path.Combine(folderPath, fileName);
 
-            string filePath = Path.Combine(folderPath, fileName);
+        // Draw the combined similarity plot
+        NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
 
-            // Draw the combined similarity plot
-            NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
-
-            Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
-
+        Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
         }
 
+        /// <summary>
+        /// Converts an image into a binary representation of fixed size and saves it as a text file.
+        /// </summary>
+        /// <param name="imagePath">The path to the input image.</param>
+        /// <param name="gridSize">The size (width and height) to resize the image before binarization.</param>
+        /// <returns>The path to the output text file containing the binary representation.</returns>
         public static string BinarizeImageToFixedSize(string imagePath, int gridSize)
         {
             string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
@@ -750,12 +753,16 @@ namespace NeoCortexApiSample
             return outputFile;
         }
 
-
-        public int[] ReadBinaryTextFile(string filePath)
-        {
-            var lines = File.ReadAllLines(filePath);
-            return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
-        }
+    /// <summary>
+    /// Reads a binary text file and converts it into a 1D integer array.
+    /// </summary>
+    /// <param name="filePath">The path to the binary text file.</param>
+    /// <returns>An array of integers representing the binary content of the file.</returns>
+    public int[] ReadBinaryTextFile(string filePath)
+    {
+        var lines = File.ReadAllLines(filePath);
+        return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
+    }
 
         
     }

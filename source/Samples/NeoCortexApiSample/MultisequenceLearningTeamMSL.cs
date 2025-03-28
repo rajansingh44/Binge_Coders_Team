@@ -273,38 +273,7 @@ namespace NeoCortexApiSample
                     double maxPossibleAccuraccy = (double)((double)sequenceKeyPair.Value.Count - 1) / (double)sequenceKeyPair.Value.Count * 100.0;
 
                     double accuracy = (double)matches / (double)sequenceKeyPair.Value.Count * 100.0;
-                    //Debug.WriteLine($"{sequenceKeyPair.Key} is having Accuracy: {accuracy}% ");
-                    //using (var swr = new StreamWriter("Accuracy Logs.csv", true)) // the "true" flag appends to the file instead of overwriting it
-                    //{
-                    //    // write the sequence accuracy to the CSV file
-                    //    swr.WriteLine($"{sequenceKeyPair.Key} is having accuracy , {accuracy}%");
-                    //}
-
-                    /* Writing accuracy in .xlsx file
-                     * 
-                    string sequenceKey = sequenceKeyPair.Key;
-                    ExcelPackage.LicenseContext = LicenseContext.NonCommercial;
-
-                    using (var package = new ExcelPackage())// Create a new Excel package and worksheet
-                    {
-                        int rowNum = 1; // initialize row number to 1
-                        var worksheet = package.Workbook.Worksheets.Add("Accuracy Data");// Write the Debug output to the Excel worksheet
-                        worksheet.Cells[rowNum, 1].Value = $"{sequenceKey} is having Accuracy: {accuracy}%";
-                        rowNum++; // increment row number
-
-                        //ExcelWorksheet ws = package.Workbook.Worksheets[0];
-                        //var worksheet = package.Workbook.Worksheets[0];
-
-                        //int row = worksheet.Dimension.End.Row + 1;
-
-                        //worksheet.Cells[row, 1].Value = sequenceKey;
-                        //worksheet.Cells[row, 2].Value = accuracy;
-
-
-                        FileInfo fileInfo = new FileInfo("Accuracy_Output.xlsx");// Save the Excel package to a file
-                        package.SaveAs(fileInfo);
-                    }
-                    */
+                    
 
 
                     Debug.WriteLine($"Cycle: {cycle}\tMatches={matches} of {sequenceKeyPair.Value.Count}\t {accuracy}%");
