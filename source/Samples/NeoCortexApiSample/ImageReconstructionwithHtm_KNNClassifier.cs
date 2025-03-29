@@ -627,7 +627,7 @@ namespace NeoCortexApiSample
         private void CreateCombinedSimilarityCSV()
         {
             string knnFilePath = Path.Combine("KNN_Similarity_Results", "Similarity_KNN.csv");
-            string htmFilePath = Path.Combine("JaccardSimilarityResults", "Similarity_HTM.csv");
+            string htmFilePath = Path.Combine("HTM_Similarity_Results", "Similarity_HTM.csv");
             string combinedDir = "CombinedSimilarityResults";
             string combinedFilePath = Path.Combine(combinedDir, "Similarity_Combined.csv");
 
@@ -667,6 +667,7 @@ namespace NeoCortexApiSample
             // Generate similarity comparison graphs
             GenerateSimilarityGraph(imageNames, knnSimilarities, htmSimilarities, combinedDir);
         }
+
 
 
         /// <summary>
