@@ -304,8 +304,8 @@ namespace NeoCortexApiSample
             }
 
             /// <summary>
-            / Logs all stored SDRs before classification.
-            / </ summary >
+            /// Logs all stored SDRs before classification.
+            /// </summary>
             Debug.WriteLine("\n--- STORED SDRs ---");
             foreach (var label in storedSDRs.Keys)
             {
@@ -382,27 +382,44 @@ namespace NeoCortexApiSample
         }
 
         /// <summary>
-        /// Reconstructs images from predicted SDRs.
+        /// Reconstructs images from predicted SDRs using the KNN-based approach and calculates their similarity to the original SDRs.
         /// </summary>
+        /// <param name="sp">The Spatial Pooler used for reconstructing permanence values.</param>
+        /// <param name="predictedSDRsList">A list of predicted SDRs for which permanence values will be reconstructed.</param>
         private void RunRustructuringExperimentKNN(SpatialPooler sp, List<int[]> predictedSDRsList)
         {
-            List<int[]> normalizedPermanence = new List<int[]>(); // List to store normalized permanence values
-            List<string> cosineResults = new List<string>(); // List to store cosine similarity results
+            /// <summary>
+            /// List to store normalized permanence values for each reconstructed SDR.
+            /// </summary>
+            List<int[]> normalizedPermanence = new List<int[]>();
+
+            /// <summary>
+            /// List to store cosine similarity results between the original and reconstructed SDRs.
+            /// </summary>
+            List<string> cosineResults = new List<string>();
 
             foreach (var predictedSDR in predictedSDRsList)
             {
                 Debug.WriteLine("Reconstructing permanence for SDR...");
 
-                // Reconstruct the permanence values for the predicted SDR
+                /// <summary>
+                /// Dictionary storing the reconstructed permanence values for the predicted SDR.
+                /// </summary>
                 Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
 
+                /// <summary>
+                /// Dictionary storing permanence values for all input indices, including inactive ones.
+                /// </summary>
                 Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
                 foreach (var kvp in reconstructedPermanence)
                 {
                     allPermanenceDictionary[kvp.Key] = kvp.Value;
                 }
 
-                int imgsize = 52 * 52; // Assuming image size is 52x52 pixels
+                /// <summary>
+                /// Assumed image size for the reconstruction (52x52 pixels).
+                /// </summary>
+                int imgsize = 52 * 52;
 
                 // Assign inactive columns a permanence value of 0
                 for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
@@ -413,19 +430,30 @@ namespace NeoCortexApiSample
                     }
                 }
 
-                // Normalize permanence values using a threshold
+                /// <summary>
+                /// Threshold value used for normalizing permanence values.
+                /// </summary>
                 var ThresholdValue = 70.0;
-                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
-                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
 
+                // Normalize permanence values using a threshold
+                List<double> permanenceValuesList = allPermanenceDictionary
+                    .OrderBy(kvp => kvp.Key)
+                    .Select(kvp => kvp.Value)
+                    .ToList();
+
+                List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
                 normalizedPermanence.Add(normalizePermanenceList.ToArray());
 
-                // Save the reconstructed binary image
+                /// <summary>
+                /// Saves the reconstructed binary image from the normalized permanence values.
+                /// </summary>
                 string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
                 NeoCortexUtils.SaveBinarizedImageFromBinaryArray(normalizePermanenceList.ToArray(), outputPath);
                 Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
 
-                // Calculate Cosine Similarity between original SDR and reconstructed SDR
+                /// <summary>
+                /// Calculates the cosine similarity between the original and reconstructed SDRs.
+                /// </summary>
                 double similarity = CosineSimilarity(predictedSDR, normalizePermanenceList.ToArray());
                 double similarityPercentage = similarity * 100;
                 cosineResults.Add($"{outputPath},{similarityPercentage:F2}");
@@ -433,11 +461,18 @@ namespace NeoCortexApiSample
                 Debug.WriteLine($"KNN Similarity between {outputPath} and original KNN SDR: {similarityPercentage:F2}%");
             }
 
-            // Save Cosine Similarity results to CSV
+            /// <summary>
+            /// Directory to store Cosine Similarity results.
+            /// </summary>
             string Cosine = "KNN_Similarity_Results";
             Directory.CreateDirectory(Cosine);
+
+            /// <summary>
+            /// Saves Cosine Similarity results to a CSV file.
+            /// </summary>
             File.WriteAllLines(Path.Combine(Cosine, "Similarity_KNN.csv"), cosineResults);
         }
+
 
         /// <summary>
         /// Calculates the Cosine Similarity between two binary vectors.
@@ -456,18 +491,41 @@ namespace NeoCortexApiSample
             return magnitude1 == 0 || magnitude2 == 0 ? 0 : dotProduct / (Math.Sqrt(magnitude1) * Math.Sqrt(magnitude2));
         }
 
+        /// <summary>
+        /// Runs the HTM-based restructuring experiment, reconstructing permanence values 
+        /// for predicted SDRs and analyzing their similarity to the original SDRs.
+        /// </summary>
+        /// <param name="sp">The Spatial Pooler used for reconstructing permanence values.</param>
+        /// <param name="predictedSDRsList">A list of predicted SDRs for which permanence values will be reconstructed.</param>
         public void RunRustructuringExperimentHtm(SpatialPooler sp, List<int[]> predictedSDRsList)
         {
-            List<int[]> normalizedPermanence_a = new List<int[]>(); // List to store normalized permanence values
-            List<double[]> similarityList = new List<double[]>(); // List for storing similarity values for graph plotting
-            List<string> jaccardResults = new List<string>(); // List to store Jaccard similarity results
+            /// <summary>
+            /// List to store normalized permanence values for each predicted SDR.
+            /// </summary>
+            List<int[]> normalizedPermanence_a = new List<int[]>();
+
+            /// <summary>
+            /// List to store similarity values, which will be used for plotting similarity graphs.
+            /// </summary>
+            List<double[]> similarityList = new List<double[]>();
+
+            /// <summary>
+            /// List to store Jaccard similarity results between the original and reconstructed SDRs.
+            /// </summary>
+            List<string> jaccardResults = new List<string>();
 
             foreach (var predictedSDR in predictedSDRsList)
             {
                 Debug.WriteLine("Reconstructing permanence for SDR...");
 
-                // Reconstruct the permanence values for the predicted SDR
+                /// <summary>
+                /// Dictionary storing the reconstructed permanence values for the predicted SDR.
+                /// </summary>
                 Dictionary<int, double> reconstructedPermanence = sp.Reconstruct(predictedSDR);
+
+                /// <summary>
+                /// Dictionary storing permanence values for all input indices, including inactive ones.
+                /// </summary>
                 Dictionary<int, double> allPermanenceDictionary = new Dictionary<int, double>();
 
                 foreach (var kvp in reconstructedPermanence)
@@ -475,7 +533,10 @@ namespace NeoCortexApiSample
                     allPermanenceDictionary[kvp.Key] = kvp.Value;
                 }
 
-                int imgsize = 52 * 52; // Assuming image size is 52x52 pixels
+                /// <summary>
+                /// Assumed image size for the reconstruction (52x52 pixels).
+                /// </summary>
+                int imgsize = 52 * 52;
 
                 // Assign inactive columns a permanence value of 0
                 for (int inputIndex = 0; inputIndex < imgsize; inputIndex++)
@@ -486,30 +547,44 @@ namespace NeoCortexApiSample
                     }
                 }
 
-                // Normalize permanence values using a threshold
+                /// <summary>
+                /// Threshold value used for normalizing permanence values.
+                /// </summary>
                 var ThresholdValue = 67.0;
-                List<double> permanenceValuesList = allPermanenceDictionary.OrderBy(kvp => kvp.Key).Select(kvp => kvp.Value).ToList();
+
+                // Normalize permanence values using a threshold
+                List<double> permanenceValuesList = allPermanenceDictionary
+                    .OrderBy(kvp => kvp.Key)
+                    .Select(kvp => kvp.Value)
+                    .ToList();
+                /// <summary>
+                /// Applies a thresholding function to normalize permanence values,
+                /// converting them into a binary representation.
+                /// </summary>
+                /// <param name="permanenceValuesList">The list of permanence values before normalization.</param>
+                /// <param name="ThresholdValue">The threshold value used for binarization.</param>
+                /// <returns>A list of binary values representing the normalized permanence.</returns>
                 List<int> normalizePermanenceList = Helpers.ThresholdingforResetImg(permanenceValuesList, ThresholdValue);
+
+                /// <summary>
+                /// Adds the normalized permanence values as an array to the list
+                /// storing all reconstructed SDRs.
+                /// </summary>
                 normalizedPermanence_a.Add(normalizePermanenceList.ToArray());
+
 
                 // Save the reconstructed binary image
                 string outputPath = $"ReconstructedSDR_{predictedSDRsList.IndexOf(predictedSDR)}";
                 NeoCortexUtils.SaveBinarizedImageFromBinaryArray_HTM(normalizePermanenceList.ToArray(), outputPath);
                 Debug.WriteLine($"Reconstructed Image saved at {outputPath}");
 
-                // Calculate Similarity between original SDR and reconstructed SDR
-                double jaccardSimilarity = AdjustedJaccardSimilarity(predictedSDR, normalizePermanenceList.ToArray());
+                // Calculate similarity between original SDR and reconstructed SDR
+                double jaccardSimilarity = AdjustedCosineSimilarity(predictedSDR, normalizePermanenceList.ToArray());
                 double similarityPercentage = jaccardSimilarity * 100;
                 jaccardResults.Add($"{outputPath},{similarityPercentage:F2}");
                 Debug.WriteLine($"Similarity between {outputPath} and original HTM SDR: {similarityPercentage:F2}%");
 
-                int[] inputVector = normalizePermanenceList.ToArray();
-
                 // Prepare data for similarity graph plotting
-                int[] sortedPredictedSDR = predictedSDR.OrderByDescending(x => x).ToArray();
-                int[] sortedNormalizePermanenceList = normalizePermanenceList.ToArray().OrderByDescending(x => x).ToArray();
-
-                // Collect similarity data for visualization
                 double[] similarityArray = new double[] { similarityPercentage };
                 similarityList.Add(similarityArray);
             }
@@ -517,17 +592,20 @@ namespace NeoCortexApiSample
             // Generate the similarity graph using collected data
             DrawSimilarityPlots(similarityList);
 
-            // Save Jaccard Similarity results to CSV
+            // Save Jaccard Similarity results to a CSV file
             string jaccardDir = "HTM_Similarity_Results";
             Directory.CreateDirectory(jaccardDir);
             File.WriteAllLines(Path.Combine(jaccardDir, "Similarity_HTM.csv"), jaccardResults);
+
+            // Create a combined similarity CSV file
             CreateCombinedSimilarityCSV();
         }
 
+
         /// <summary>
-        /// Calculates the Jaccard Similarity between two binary vectors.
+        /// Calculates the Cosine Similarity between two binary vectors.
         /// </summary>
-        private double AdjustedJaccardSimilarity(int[] vec1, int[] vec2)
+        private double AdjustedCosineSimilarity(int[] vec1, int[] vec2)
         {
             double dotProduct = 0, magnitude1 = 0, magnitude2 = 0;
 
@@ -682,24 +760,23 @@ namespace NeoCortexApiSample
         }
 
 
+        /// <summary>
+        /// Draws similarity plots by combining all similarity values from a list and saves the plot as an image.
+        /// </summary>
+        /// <param name="similaritiesList">A list of arrays containing similarity values.</param>
         public static void DrawSimilarityPlots(List<double[]> similaritiesList)
         {
             // Combine all similarities from the list of arrays
-
             List<double> combinedSimilarities = new List<double>();
             foreach (var similarities in similaritiesList)
-
             {
                 combinedSimilarities.AddRange(similarities);
             }
 
             // Define the folder path based on the current directory
-
             string folderPath = Path.Combine(Environment.CurrentDirectory, "SimilarityPlots_Image_Inputs");
 
-
             // Create the folder if it doesn't exist
-
             if (!Directory.Exists(folderPath))
             {
                 Directory.CreateDirectory(folderPath);
@@ -709,17 +786,21 @@ namespace NeoCortexApiSample
             string fileName = "combined_similarity_plot_Image_Inputs.png";
 
             // Define the file path with the folder path and file name
-
             string filePath = Path.Combine(folderPath, fileName);
 
             // Draw the combined similarity plot
             NeoCortexUtils.DrawCombinedSimilarityPlot(combinedSimilarities, filePath, 2000, 2000);
 
             Debug.WriteLine($"Combined similarity plot generated and saved successfully.");
-
         }
 
-        private static string BinarizeImageToFixedSize(string imagePath, int gridSize)
+        /// <summary>
+        /// Converts an image into a binary representation of fixed size and saves it as a text file.
+        /// </summary>
+        /// <param name="imagePath">The path to the input image.</param>
+        /// <param name="gridSize">The size (width and height) to resize the image before binarization.</param>
+        /// <returns>The path to the output text file containing the binary representation.</returns>
+        public static string BinarizeImageToFixedSize(string imagePath, int gridSize)
         {
             string outputFile = Path.Combine("Output", Path.GetFileNameWithoutExtension(imagePath) + ".txt");
 
@@ -738,7 +819,6 @@ namespace NeoCortexApiSample
                     }
                 }
 
-
                 using (StreamWriter writer = new StreamWriter(outputFile))
                 {
                     for (int i = 0; i < gridSize; i++)
@@ -751,8 +831,12 @@ namespace NeoCortexApiSample
             return outputFile;
         }
 
-
-        private int[] ReadBinaryTextFile(string filePath)
+        /// <summary>
+        /// Reads a binary text file and converts it into a 1D integer array.
+        /// </summary>
+        /// <param name="filePath">The path to the binary text file.</param>
+        /// <returns>An array of integers representing the binary content of the file.</returns>
+        public int[] ReadBinaryTextFile(string filePath)
         {
             var lines = File.ReadAllLines(filePath);
             return lines.SelectMany(line => line.Select(c => c == '1' ? 1 : 0)).ToArray();
